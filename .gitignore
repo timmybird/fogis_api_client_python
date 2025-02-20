@@ -1,0 +1,29 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+
+# Virtual environment
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+
+# IDE / Editor
+.idea/  # For IntelliJ IDEA / PyCharm
+.vscode/ # For Visual Studio Code
+*.swp  # Swap files
+*~  # Backup files
+*.log
+*.tmp
+
+# Distrubution / packaging
+dist/
+build/
+*.egg
+
+# OS generated files
+.DS_Store # macOS
