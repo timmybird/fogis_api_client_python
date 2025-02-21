@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-
+    if: github.event_name == 'release'  # Only run on release events
     steps:
       - uses: actions/checkout@v4
 
