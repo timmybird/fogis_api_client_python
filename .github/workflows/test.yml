@@ -2,9 +2,9 @@ name: Test and Publish
 
 on:
   push:
-    branches: [ "main", "feature/*" ]
+    branches: ["main", "feature/*"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   release:
     types: [published]  # Trigger when a release is published
 
@@ -21,6 +21,8 @@ jobs:
 
       - name: Install dependencies
         run: |
+          python -m venv .venv
+          source ./.venv/bin/activate
           python -m pip install --upgrade pip setuptools wheel
           pip install -e .[dev]
 
