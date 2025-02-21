@@ -13,9 +13,10 @@ pip install fogis-api-client-timmyBird
 ```
 ---
 #### Usage
+
 ```python
 import logging
-from fogis_api_client import FogisApiClient, FogisLoginError, FogisAPIRequestError
+from fogis_api_client.fogis_api_client import FogisApiClient, FogisLoginError, FogisAPIRequestError
 
 logging.basicConfig(level=logging.INFO)
 

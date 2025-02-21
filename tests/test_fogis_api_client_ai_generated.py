@@ -1,10 +1,7 @@
 import unittest
-from unittest.mock import patch, MagicMock, call, ANY
-import sys
+from unittest.mock import patch, MagicMock
 import logging
 import io
-import contextlib
-from logging import StreamHandler
 
 from fogis_api_client.fogis_api_client import FogisApiClient
 from fogis_api_client.fogis_api_client import FogisAPIRequestError, FogisLoginError
@@ -13,6 +10,7 @@ import json
 
 class TestFogisApiClient(unittest.TestCase):
     def setUp(self):
+
         self.api_client = FogisApiClient(username='test_user', password='test_password')
         self.log_capture = io.StringIO()
         self.handler = logging.StreamHandler(self.log_capture)

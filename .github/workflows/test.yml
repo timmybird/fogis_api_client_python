@@ -6,47 +6,61 @@ on:
   pull_request:
     branches: [ "main" ]
   release:
-    types: [published]
+    types: [published]  # Trigger when a release is published
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.9"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip setuptools wheel
-        pip install --upgrade -e .[dev]
-    - name: Lint with flake8
-      run: |
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest
-      run: |
-        pytest tests/
-
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-    steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
           python-version: "3.9"
+
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install --upgrade -e .
+          python -m venv .venv
+          source ./.venv/bin/activate
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e .[dev]
+
+      - name: Lint with flake8
+        run: |
+          source ./.venv/bin/activate
+          flake8 fogis_api_client tests --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 fogis_api_client tests --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Test with pytest
+        run: |
+          source ./.venv/bin/activate
+          pytest tests/
+
+  publish:
+    needs: build  # Only run after the 'build' job is successful
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e .
+
       - name: Build package
         run: python setup.py sdist bdist_wheel
+
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
+          distributions: dist/*

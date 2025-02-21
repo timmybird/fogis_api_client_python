@@ -1,11 +1,17 @@
-from unittest.mock import MagicMock, call
+import sys
+print("sys.path:")
+for path in sys.path:
+    print(path)
+
+from unittest.mock import MagicMock
 import pytest
 import requests
 
-from ..fogis_api_client import FogisApiClient, FogisDataError, FogisAPIRequestError, FogisLoginError
+from fogis_api_client.fogis_api_client import FogisApiClient, FogisDataError, FogisAPIRequestError, FogisLoginError
 
 
-from unittest.mock import Mock, call, ANY
+from unittest.mock import Mock
+
 
 class MockResponse:
     """
