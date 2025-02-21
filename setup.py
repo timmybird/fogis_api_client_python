@@ -31,4 +31,5 @@ setuptools.setup(
             'flake8',
         ],
     },
+    include_package_data=True,
 )
