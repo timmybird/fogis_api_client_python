@@ -40,6 +40,10 @@ class FogisDataError(FogisAPIError):
     """Exception raised when there's an issue with FOGIS API data."""
     pass
 
+class FogisFilterValidationError(FogisAPIError):
+    """Exception raised when the provided filter parameters are invalid."""
+    pass
+
 
 class FogisApiClient:
     """
@@ -180,6 +184,9 @@ class FogisApiClient:
         Returns:
             list: A list of match dictionaries, or None if fetching fails.
 
+        Raises:
+            FogisFilterValidationError: If the provided filter parameters are invalid.
+
         Example `filter` payload:
 
         ```python
@@ -200,7 +207,7 @@ class FogisApiClient:
         payload_filter = {
             "datumFran": default_datum_fran,
             "datumTill": default_datum_till,
-            "datumTyp": 0, # Default to relative dates
+            "datumTyp": 0,  # Default to relative dates
             "typ": "alla",
             "status": ["avbruten", "uppskjuten", "installd"],
             "alderskategori": [1, 2, 3, 4, 5],
@@ -209,18 +216,68 @@ class FogisApiClient:
         }
 
         if filter:
-            # Update payload_filter with user provided filter, if available and valid
+            if not isinstance(filter, dict):
+                raise FogisFilterValidationError("Filter parameter must be a dictionary.")
+
             if 'datumFran' in filter:
+                if not isinstance(filter['datumFran'], str):
+                    raise FogisFilterValidationError(
+                        "Filter parameter 'datumFran' must be a string in YYYY-MM-DD format.")
+                # Basic date format validation (more robust validation could be added)
+                try:
+                    datetime.strptime(filter['datumFran'], '%Y-%m-%d')
+                except ValueError:
+                    raise FogisFilterValidationError("Filter parameter 'datumFran' must be in YYYY-MM-DD format.")
                 payload_filter['datumFran'] = filter['datumFran']
+
             if 'datumTill' in filter:
+                if not isinstance(filter['datumTill'], str):
+                    raise FogisFilterValidationError(
+                        "Filter parameter 'datumTill' must be a string in YYYY-MM-DD format.")
+                # Basic date format validation (more robust validation could be added)
+                try:
+                    datetime.strptime(filter['datumTill'], '%Y-%m-%d')
+                except ValueError:
+                    raise FogisFilterValidationError("Filter parameter 'datumTill' must be in YYYY-MM-DD format.")
                 payload_filter['datumTill'] = filter['datumTill']
-            if 'status' in filter and isinstance(filter['status'], list): # Basic validation for status being a list
+
+            if 'datumTyp' in filter:
+                if not isinstance(filter['datumTyp'], int):
+                    raise FogisFilterValidationError("Filter parameter 'datumTyp' must be an integer.")
+                payload_filter['datumTyp'] = filter['datumTyp']
+
+            if 'status' in filter:
+                if not isinstance(filter['status'], list):
+                    raise FogisFilterValidationError("Filter parameter 'status' must be a list of strings.")
+                if not all(
+                        isinstance(item, str) for item in filter['status']):  # Check if all items in list are strings
+                    raise FogisFilterValidationError("Filter parameter 'status' must be a list of strings.")
                 payload_filter['status'] = filter['status']
-            if 'alderskategori' in filter and isinstance(filter['alderskategori'], list): # Basic validation for alderskategori being a list
+
+            if 'alderskategori' in filter:
+                if not isinstance(filter['alderskategori'], list):
+                    raise FogisFilterValidationError("Filter parameter 'alderskategori' must be a list of integers.")
+                if not all(isinstance(item, int) for item in
+                           filter['alderskategori']):  # Check if all items in list are integers
+                    raise FogisFilterValidationError("Filter parameter 'alderskategori' must be a list of integers.")
                 payload_filter['alderskategori'] = filter['alderskategori']
-            if 'kon' in filter and isinstance(filter['kon'], list): # Basic validation for kon being a list
+
+            if 'kon' in filter:
+                if not isinstance(filter['kon'], list):
+                    raise FogisFilterValidationError("Filter parameter 'kon' must be a list of integers.")
+                if not all(isinstance(item, int) for item in filter['kon']):  # Check if all items in list are integers
+                    raise FogisFilterValidationError("Filter parameter 'kon' must be a list of integers.")
                 payload_filter['kon'] = filter['kon']
-            # We can add more filter parameters here as needed (e.g., 'typ', 'datumTyp')
+
+            if 'sparadDatum' in filter:
+                if not isinstance(filter['sparadDatum'], str):
+                    raise FogisFilterValidationError(
+                        "Filter parameter 'sparadDatum' must be a string in YYYY-MM-DD format.")
+                try:
+                    datetime.strptime(filter['sparadDatum'], '%Y-%m-%d')
+                except ValueError:
+                    raise FogisFilterValidationError("Filter parameter 'sparadDatum' must be in YYYY-MM-DD format.")
+                payload_filter['sparadDatum'] = filter['sparadDatum']
 
         matches_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatcherAttRapportera"
         data = self._api_request(matches_url, {"filter": payload_filter}) # Wrap payload_filter in "filter" key
