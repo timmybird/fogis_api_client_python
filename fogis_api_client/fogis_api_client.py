@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timedelta
+from typing import Optional, Dict, Any
 
 import requests
 from bs4 import BeautifulSoup
@@ -159,27 +160,72 @@ class FogisApiClient:
             self.logger.error(f"Value Error in _api_request: {ve}")
             raise FogisAPIRequestError(f"Value Error in _api_request: {ve}") from ve # Chaining ValueError
 
-    def fetch_matches_list_json(self):
-        """Fetches the list of matches in JSON format from FOGIS API."""
-        matches_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatcherAttRapportera"  # Using BASE_URL
-        today = datetime.today().strftime('%Y-%m-%d')
-        one_week_ago = (datetime.today() - timedelta(days=7)).strftime('%Y-%m-%d')
-        one_year_from_now = (datetime.today() + timedelta(days=365)).strftime('%Y-%m-%d')
+    def fetch_matches_list_json(self, filter: Optional[Dict[str, Any]] = None):
+        """Fetches the list of matches in JSON format from FOGIS API.
 
-        payload = {
-            "filter": {
-                "datumFran": one_week_ago,
-                "datumTill": one_year_from_now,
-                "datumTyp": 0,
-                "typ": "alla",
-                "status": ["avbruten", "uppskjuten", "installd"],
-                "alderskategori": [1, 2, 3, 4, 5],
-                "kon": [3, 2, 4],
-                "sparadDatum": today
-            }
+        Args:
+            filter (Optional[dict], optional): A dictionary containing filter criteria. Defaults to None, which fetches matches for the default date range (one week back and 365 days ahead).
+                *   `datumFran` (Optional[str]): Start date for the date range filter (YYYY-MM-DD).
+                *   `datumTill` (Optional[str]): End date for the date range filter (YYYY-MM-DD).
+                *   `datumTyp` (Optional[int]): 0 for relative dates, 1 for fixed dates. Defaults to 0 (relative).
+                *   `status` (Optional[List[str]]): A list of match statuses to filter by.
+                    Valid values include: `"avbruten"`, `"uppskjuten"`, `"installd"`.
+                    **Note: This list is not exhaustive and other valid status values may exist within the FOGIS API.**
+                *   `alderskategori` (Optional[List[int]]): A list of age category IDs to filter by.
+                    Valid values include: `1`, `2`, `3`, `4`, `5`. See documentation for ID mappings to category names.
+                *   `kon` (Optional[List[int]]): A list of gender IDs to filter by.
+                    Valid values include: `2`, `3`, `4`. See documentation for ID mappings to gender names.
+                *   `sparadDatum`(Optional[str]): The date when the filter was saved as (YYYY-MM-DD), use unknown - defaults to today's  date
+
+        Returns:
+            list: A list of match dictionaries, or None if fetching fails.
+
+        Example `filter` payload:
+
+        ```python
+        filter_payload = {
+            "datumFran": "2024-03-01",
+            "datumTill": "2024-03-31",
+            "status": ["avbruten", "spelad"], # Example with "spelad" - might not be valid, needs verification
+            "alderskategori": [3, 4],
+            "kon": [4]
         }
-        data = self._api_request(matches_url, payload)
+        matches = api_client.fetch_matches_list_json(filter=filter_payload)
+        ```
+        """
+        today = datetime.today().strftime('%Y-%m-%d')
+        default_datum_fran = (datetime.today() - timedelta(days=7)).strftime('%Y-%m-%d')
+        default_datum_till = (datetime.today() + timedelta(days=365)).strftime('%Y-%m-%d')
+
+        payload_filter = {
+            "datumFran": default_datum_fran,
+            "datumTill": default_datum_till,
+            "datumTyp": 0, # Default to relative dates
+            "typ": "alla",
+            "status": ["avbruten", "uppskjuten", "installd"],
+            "alderskategori": [1, 2, 3, 4, 5],
+            "kon": [3, 2, 4],
+            "sparadDatum": today
+        }
+
+        if filter:
+            # Update payload_filter with user provided filter, if available and valid
+            if 'datumFran' in filter:
+                payload_filter['datumFran'] = filter['datumFran']
+            if 'datumTill' in filter:
+                payload_filter['datumTill'] = filter['datumTill']
+            if 'status' in filter and isinstance(filter['status'], list): # Basic validation for status being a list
+                payload_filter['status'] = filter['status']
+            if 'alderskategori' in filter and isinstance(filter['alderskategori'], list): # Basic validation for alderskategori being a list
+                payload_filter['alderskategori'] = filter['alderskategori']
+            if 'kon' in filter and isinstance(filter['kon'], list): # Basic validation for kon being a list
+                payload_filter['kon'] = filter['kon']
+            # We can add more filter parameters here as needed (e.g., 'typ', 'datumTyp')
+
+        matches_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatcherAttRapportera"
+        data = self._api_request(matches_url, {"filter": payload_filter}) # Wrap payload_filter in "filter" key
         return data['matchlista'] if data and 'matchlista' in data else None
+
 
     def fetch_team_players_json(self, team_id):
         """Fetches the list of team players in JSON format for a given team ID."""
