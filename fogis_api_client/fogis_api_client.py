@@ -1,6 +1,6 @@
 import logging
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from datetime import datetime, timedelta, date
+from typing import Optional, Dict, Any, List
 
 import requests
 from bs4 import BeautifulSoup
@@ -24,25 +24,157 @@ event_types = {  # Updated - Consistent Integer Keys for ALL event types (where 
     23: {"name": "Match Slut", "goal": False, "control_event": True}
 }
 
+
 class FogisAPIError(Exception): # Base class for all Fogis API exceptions
     """Base class for exceptions in the FOGIS API Client."""
     pass
+
 
 class FogisLoginError(FogisAPIError):
     """Exception raised when login to FOGIS API fails."""
     pass
 
+
 class FogisAPIRequestError(FogisAPIError):
     """Exception raised for general FOGIS API request errors."""
     pass
+
 
 class FogisDataError(FogisAPIError):
     """Exception raised when there's an issue with FOGIS API data."""
     pass
 
+
 class FogisFilterValidationError(FogisAPIError):
     """Exception raised when the provided filter parameters are invalid."""
     pass
+
+
+class MatchFilterBuilder:
+    """
+    Builder class for constructing filter dictionaries for fetching matches from the FOGIS API.
+    Provides a fluent interface for building filter criteria with validation and clear documentation.
+    Validation errors are collected during the building process and raised when the `build()` method is called.
+    """
+    VALID_STATUSES = ["avbruten", "uppskjuten", "installd"]
+    STATUS_DESCRIPTIONS = {
+        "avbruten": "interrupted/abandoned",
+        "uppskjuten": "postponed/rescheduled",
+        "installd": "cancelled"
+    }
+    VALID_AGE_CATEGORIES = [1, 2, 3, 4, 5]
+    AGE_CATEGORY_DESCRIPTIONS = {
+        1: "undefined",
+        2: "children",
+        3: "youth",
+        4: "adults/senior",
+        5: "veteran"
+    }
+    VALID_GENDERS = [2, 3, 4]
+    GENDER_DESCRIPTIONS = {
+        2: "men",
+        3: "women",
+        4: "mixed"
+    }
+
+    def __init__(self):
+        self._filter = {}  # Internal dictionary to store filter parameters
+        self._errors = []  # List to store validation error messages
+
+    def date_range(self, start_date: date, end_date: date) -> 'MatchFilterBuilder':
+        """Sets the date range filter. (Docstring remains same as before)"""
+        if not isinstance(start_date, date) or not isinstance(end_date, date):
+            self._errors.append("Start and end dates must be datetime.date objects.")  # Append error, don't raise
+        elif start_date > end_date:
+            self._errors.append("Start date cannot be after end date.")  # Append error, don't raise
+        else:
+            self._filter['datumFran'] = start_date.strftime('%Y-%m-%d')
+            self._filter['datumTill'] = end_date.strftime('%Y-%m-%d')
+        return self
+
+    def date_type(self, date_type: int) -> 'MatchFilterBuilder':
+        """Sets the date type filter. (Docstring remains same as before)"""
+        if not isinstance(date_type, int) or date_type not in [0, 1]:
+            self._errors.append("Date type must be an integer, either 0 or 1.")  # Append error, don't raise
+        else:
+            self._filter['datumTyp'] = date_type
+        return self
+
+    def status(self, statuses: List[str]) -> 'MatchFilterBuilder':
+        """Sets the match status filter. (Docstring remains same as before)"""
+        if not isinstance(statuses, list) or not all(isinstance(s, str) for s in statuses):
+            self._errors.append("Status filter must be a list of strings.")  # Append error, don't raise
+        else:
+            invalid_statuses = []
+            for status in statuses:
+                if status not in self.VALID_STATUSES:
+                    invalid_statuses.append(status)
+            if invalid_statuses:
+                valid_statuses_str = ', '.join([f'{s} ({self.STATUS_DESCRIPTIONS[s]})' for s in self.VALID_STATUSES])
+                self._errors.append(
+                    f"Invalid statuses: {', '.join(invalid_statuses)}. Valid statuses are: {valid_statuses_str}")  # Append error
+            else:
+                self._filter['status'] = statuses
+        return self
+
+    def age_categories(self, categories: List[int]) -> 'MatchFilterBuilder':
+        """Sets the age category filter. (Docstring remains same as before)"""
+        if not isinstance(categories, list) or not all(isinstance(cat, int) for cat in categories):
+            self._errors.append("Age categories filter must be a list of integers.")  # Append error, don't raise
+        else:
+            invalid_categories = []
+            for category in categories:
+                if category not in self.VALID_AGE_CATEGORIES:
+                    invalid_categories.append(str(category))  # Convert to str for consistent error message
+            if invalid_categories:
+                valid_categories_str = ', '.join(
+                    [f'{cat} ({self.AGE_CATEGORY_DESCRIPTIONS[cat]})' for cat in self.VALID_AGE_CATEGORIES])
+                self._errors.append(
+                    f"Invalid age category IDs: {', '.join(invalid_categories)}. Valid IDs are: {valid_categories_str}")  # Append error
+            else:
+                self._filter['alderskategori'] = categories
+        return self
+
+    def genders(self, genders: List[int]) -> 'MatchFilterBuilder':
+        """Sets the gender filter. (Docstring remains same as before)"""
+        if not isinstance(genders, list) or not all(isinstance(gen, int) for gen in genders):
+            self._errors.append("Genders filter must be a list of integers.")  # Append error, don't raise
+        else:
+            invalid_genders = []
+            for gender in genders:
+                if gender not in self.VALID_GENDERS:
+                    invalid_genders.append(str(gender))  # Convert to str for consistent error message
+            if invalid_genders:
+                valid_genders_str = ', '.join(
+                    [f'{gen} ({self.GENDER_DESCRIPTIONS[gen]})' for gen in self.VALID_GENDERS])
+                self._errors.append(
+                    f"Invalid gender IDs: {', '.join(invalid_genders)}. Valid IDs are: {valid_genders_str}")  # Append error
+            else:
+                self._filter['kon'] = genders
+        return self
+
+    def saved_date(self, saved_date: date) -> 'MatchFilterBuilder':
+        """Sets the saved date filter. (Docstring remains same as before)"""
+        if not isinstance(saved_date, date):
+            self._errors.append("Saved date must be a datetime.date object.")  # Append error, don't raise
+        else:
+            self._filter['sparadDatum'] = saved_date.strftime('%Y-%m-%d')
+        return self
+
+    def build(self) -> Dict[str, Any]:
+        """
+        Builds and returns the filter dictionary.
+
+        Raises:
+            FogisFilterValidationError: If any validation errors were encountered during filter construction.
+
+        Returns:
+            Dict[str, Any]: The constructed filter dictionary if no errors occurred.
+        """
+        if self._errors:
+            error_message = "Filter validation errors encountered:\n" + "\n".join([f"- {err}" for err in self._errors])
+            raise FogisFilterValidationError(error_message)  # Raise exception if errors
+        return self._filter
 
 
 class FogisApiClient:
@@ -282,7 +414,6 @@ class FogisApiClient:
         matches_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatcherAttRapportera"
         data = self._api_request(matches_url, {"filter": payload_filter}) # Wrap payload_filter in "filter" key
         return data['matchlista'] if data and 'matchlista' in data else None
-
 
     def fetch_team_players_json(self, team_id):
         """Fetches the list of team players in JSON format for a given team ID."""
