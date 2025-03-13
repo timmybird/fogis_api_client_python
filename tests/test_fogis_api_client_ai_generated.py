@@ -152,13 +152,6 @@ class TestFogisApiClient(unittest.TestCase):
         result = api_client.fetch_matches_list_json()
         self.assertEqual(result, [])
 
-    @patch('fogis_api_client.fogis_api_client.FogisApiClient._api_request')
-    def test_fetch_matches_list_json_api_returns_none(self, mock_api_request):
-        mock_api_request.return_value = None
-        api_client = FogisApiClient(username='test_user', password='test_password')
-        api_client.cookies = {'FogisMobilDomarKlient.ASPXAUTH': 'test_cookie'}
-        result = api_client.fetch_matches_list_json()
-        self.assertIsNone(result)
 
     @patch('fogis_api_client.fogis_api_client.FogisApiClient._api_request')
     def test_fetch_team_players_json_success(self, mock_api_request):

@@ -13,10 +13,10 @@ ENV/
 *.egg-info/
 
 # IDE / Editor
-.idea/  # For IntelliJ IDEA / PyCharm
-.vscode/ # For Visual Studio Code
-*.swp  # Swap files
-*~  # Backup files
+.idea/
+.vscode/
+*.swp
+*~
 *.log
 *.tmp
 
@@ -26,7 +26,7 @@ build/
 *.egg
 
 # OS generated files
-.DS_Store # macOS
+.DS_Store
 
 # GitHub
 .devcontainer/

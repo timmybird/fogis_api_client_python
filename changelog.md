@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.5] - 2025-03-14
+
+### Fixed
+- Completely revamped the entire filtering logic to use the `MatchListFilter` class for both server side and local filtering.
+
+### Added
+- `MatchListFilter` class for that passes a date filter to the API client and then does client-side filtering on the returned data.
+- Filtering for status, age category, gender, and football type.
+
 ## [0.0.4] - 2025-03-05
 
 ### Added
