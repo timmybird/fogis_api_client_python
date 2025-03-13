@@ -1,9 +1,9 @@
 import logging
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
-
 import requests
 from bs4 import BeautifulSoup
+from .enums import MatchStatus, AgeCategory, Gender, FootballType
 
 event_types = {  # Updated - Consistent Integer Keys for ALL event types (where applicable)
     6: {"name": "Regular Goal", "goal": True},
@@ -25,7 +25,7 @@ event_types = {  # Updated - Consistent Integer Keys for ALL event types (where 
 }
 
 
-class FogisAPIError(Exception): # Base class for all Fogis API exceptions
+class FogisAPIError(Exception):  # Base class for all Fogis API exceptions
     """Base class for exceptions in the FOGIS API Client."""
     pass
 
@@ -48,133 +48,6 @@ class FogisDataError(FogisAPIError):
 class FogisFilterValidationError(FogisAPIError):
     """Exception raised when the provided filter parameters are invalid."""
     pass
-
-
-class MatchFilterBuilder:
-    """
-    Builder class for constructing filter dictionaries for fetching matches from the FOGIS API.
-    Provides a fluent interface for building filter criteria with validation and clear documentation.
-    Validation errors are collected during the building process and raised when the `build()` method is called.
-    """
-    VALID_STATUSES = ["avbruten", "uppskjuten", "installd"]
-    STATUS_DESCRIPTIONS = {
-        "avbruten": "interrupted/abandoned",
-        "uppskjuten": "postponed/rescheduled",
-        "installd": "cancelled"
-    }
-    VALID_AGE_CATEGORIES = [1, 2, 3, 4, 5]
-    AGE_CATEGORY_DESCRIPTIONS = {
-        1: "undefined",
-        2: "children",
-        3: "youth",
-        4: "adults/senior",
-        5: "veteran"
-    }
-    VALID_GENDERS = [2, 3, 4]
-    GENDER_DESCRIPTIONS = {
-        2: "men",
-        3: "women",
-        4: "mixed"
-    }
-
-    def __init__(self):
-        self._filter = {}  # Internal dictionary to store filter parameters
-        self._errors = []  # List to store validation error messages
-
-    def date_range(self, start_date: date, end_date: date) -> 'MatchFilterBuilder':
-        """Sets the date range filter. (Docstring remains same as before)"""
-        if not isinstance(start_date, date) or not isinstance(end_date, date):
-            self._errors.append("Start and end dates must be datetime.date objects.")  # Append error, don't raise
-        elif start_date > end_date:
-            self._errors.append("Start date cannot be after end date.")  # Append error, don't raise
-        else:
-            self._filter['datumFran'] = start_date.strftime('%Y-%m-%d')
-            self._filter['datumTill'] = end_date.strftime('%Y-%m-%d')
-        return self
-
-    def date_type(self, date_type: int) -> 'MatchFilterBuilder':
-        """Sets the date type filter. (Docstring remains same as before)"""
-        if not isinstance(date_type, int) or date_type not in [0, 1]:
-            self._errors.append("Date type must be an integer, either 0 or 1.")  # Append error, don't raise
-        else:
-            self._filter['datumTyp'] = date_type
-        return self
-
-    def status(self, statuses: List[str]) -> 'MatchFilterBuilder':
-        """Sets the match status filter. (Docstring remains same as before)"""
-        if not isinstance(statuses, list) or not all(isinstance(s, str) for s in statuses):
-            self._errors.append("Status filter must be a list of strings.")  # Append error, don't raise
-        else:
-            invalid_statuses = []
-            for status in statuses:
-                if status not in self.VALID_STATUSES:
-                    invalid_statuses.append(status)
-            if invalid_statuses:
-                valid_statuses_str = ', '.join([f'{s} ({self.STATUS_DESCRIPTIONS[s]})' for s in self.VALID_STATUSES])
-                self._errors.append(
-                    f"Invalid statuses: {', '.join(invalid_statuses)}. Valid statuses are: {valid_statuses_str}")  # Append error
-            else:
-                self._filter['status'] = statuses
-        return self
-
-    def age_categories(self, categories: List[int]) -> 'MatchFilterBuilder':
-        """Sets the age category filter. (Docstring remains same as before)"""
-        if not isinstance(categories, list) or not all(isinstance(cat, int) for cat in categories):
-            self._errors.append("Age categories filter must be a list of integers.")  # Append error, don't raise
-        else:
-            invalid_categories = []
-            for category in categories:
-                if category not in self.VALID_AGE_CATEGORIES:
-                    invalid_categories.append(str(category))  # Convert to str for consistent error message
-            if invalid_categories:
-                valid_categories_str = ', '.join(
-                    [f'{cat} ({self.AGE_CATEGORY_DESCRIPTIONS[cat]})' for cat in self.VALID_AGE_CATEGORIES])
-                self._errors.append(
-                    f"Invalid age category IDs: {', '.join(invalid_categories)}. Valid IDs are: {valid_categories_str}")  # Append error
-            else:
-                self._filter['alderskategori'] = categories
-        return self
-
-    def genders(self, genders: List[int]) -> 'MatchFilterBuilder':
-        """Sets the gender filter. (Docstring remains same as before)"""
-        if not isinstance(genders, list) or not all(isinstance(gen, int) for gen in genders):
-            self._errors.append("Genders filter must be a list of integers.")  # Append error, don't raise
-        else:
-            invalid_genders = []
-            for gender in genders:
-                if gender not in self.VALID_GENDERS:
-                    invalid_genders.append(str(gender))  # Convert to str for consistent error message
-            if invalid_genders:
-                valid_genders_str = ', '.join(
-                    [f'{gen} ({self.GENDER_DESCRIPTIONS[gen]})' for gen in self.VALID_GENDERS])
-                self._errors.append(
-                    f"Invalid gender IDs: {', '.join(invalid_genders)}. Valid IDs are: {valid_genders_str}")  # Append error
-            else:
-                self._filter['kon'] = genders
-        return self
-
-    def saved_date(self, saved_date: date) -> 'MatchFilterBuilder':
-        """Sets the saved date filter. (Docstring remains same as before)"""
-        if not isinstance(saved_date, date):
-            self._errors.append("Saved date must be a datetime.date object.")  # Append error, don't raise
-        else:
-            self._filter['sparadDatum'] = saved_date.strftime('%Y-%m-%d')
-        return self
-
-    def build(self) -> Dict[str, Any]:
-        """
-        Builds and returns the filter dictionary.
-
-        Raises:
-            FogisFilterValidationError: If any validation errors were encountered during filter construction.
-
-        Returns:
-            Dict[str, Any]: The constructed filter dictionary if no errors occurred.
-        """
-        if self._errors:
-            error_message = "Filter validation errors encountered:\n" + "\n".join([f"- {err}" for err in self._errors])
-            raise FogisFilterValidationError(error_message)  # Raise exception if errors
-        return self._filter
 
 
 class FogisApiClient:
@@ -294,126 +167,67 @@ class FogisApiClient:
             raise FogisAPIRequestError(f"API request error to {url}: {e}") from e
         except ValueError as ve:
             self.logger.error(f"Value Error in _api_request: {ve}")
-            raise FogisAPIRequestError(f"Value Error in _api_request: {ve}") from ve # Chaining ValueError
+            raise FogisAPIRequestError(f"Value Error in _api_request: {ve}") from ve  # Chaining ValueError
+
 
     def fetch_matches_list_json(self, filter: Optional[Dict[str, Any]] = None):
         """Fetches the list of matches in JSON format from FOGIS API.
 
+        Now ONLY handles API fetching. Client-side filtering is applied separately using the MatchListFilter class.
+
         Args:
-            filter (Optional[dict], optional): A dictionary containing filter criteria. Defaults to None, which fetches matches for the default date range (one week back and 365 days ahead).
-                *   `datumFran` (Optional[str]): Start date for the date range filter (YYYY-MM-DD).
-                *   `datumTill` (Optional[str]): End date for the date range filter (YYYY-MM-DD).
-                *   `datumTyp` (Optional[int]): 0 for relative dates, 1 for fixed dates. Defaults to 0 (relative).
-                *   `status` (Optional[List[str]]): A list of match statuses to filter by.
-                    Valid values include: `"avbruten"`, `"uppskjuten"`, `"installd"`.
-                    **Note: This list is not exhaustive and other valid status values may exist within the FOGIS API.**
-                *   `alderskategori` (Optional[List[int]]): A list of age category IDs to filter by.
-                    Valid values include: `1`, `2`, `3`, `4`, `5`. See documentation for ID mappings to category names.
-                *   `kon` (Optional[List[int]]): A list of gender IDs to filter by.
-                    Valid values include: `2`, `3`, `4`. See documentation for ID mappings to gender names.
-                *   `sparadDatum`(Optional[str]): The date when the filter was saved as (YYYY-MM-DD), use unknown - defaults to today's  date
+            filter (Optional[Dict[str, Any]], optional): An OPTIONAL dictionary containing server-side
+                date range filter criteria (`datumFran`, `datumTill`, `datumTyp`, `sparadDatum`).
+                Client-side filtering (status, age category, gender, football type)
+                is now handled separately using the MatchListFilter class AFTER fetching.
+                Defaults to None, which fetches matches for the default date range (one week back and 365 days ahead)
+                without any server-side filtering beyond the default date range.
 
         Returns:
             list: A list of match dictionaries, or None if fetching fails.
 
         Raises:
-            FogisFilterValidationError: If the provided filter parameters are invalid.
+            FogisFilterValidationError: If the provided filter parameters are invalid in the filter dictionary (if provided).
+            FogisLoginError: If login fails.
+            FogisAPIRequestError: If the API request fails with an HTTP error.
+            FogisDataError: If the API response data is invalid or in an unexpected format.
 
-        Example `filter` payload:
-
+        Example Usage (Fetching all matches within default date range):
         ```python
-        filter_payload = {
-            "datumFran": "2024-03-01",
-            "datumTill": "2024-03-31",
-            "status": ["avbruten", "spelad"], # Example with "spelad" - might not be valid, needs verification
-            "alderskategori": [3, 4],
-            "kon": [4]
-        }
-        matches = api_client.fetch_matches_list_json(filter=filter_payload)
+        api_client = FogisApiClient("your_username", "your_password")
+        all_matches = api_client.fetch_matches_list_json() # No filter, fetches all matches within default date range
+        if all_matches:
+            print(f"Fetched {len(all_matches)} matches.")
+        else:
+            print("Failed to fetch matches.")
         ```
+
+        For applying client-side filtering, use the MatchListFilter class separately AFTER fetching.
+        See the MatchListFilter class documentation for examples of how to create and use filters.
         """
         today = datetime.today().strftime('%Y-%m-%d')
-        default_datum_fran = (datetime.today() - timedelta(days=7)).strftime('%Y-%m-%d')
-        default_datum_till = (datetime.today() + timedelta(days=365)).strftime('%Y-%m-%d')
+        default_datum_fran = (datetime.today() - timedelta(days=7)).strftime('%Y-%m-%d') # One week ago
+        default_datum_till = (datetime.today() + timedelta(days=365)).strftime('%Y-%m-%d') # 365 days ahead
 
-        payload_filter = {
+        payload_filter = { # --- Build DEFAULT payload dictionary DIRECTLY
             "datumFran": default_datum_fran,
             "datumTill": default_datum_till,
-            "datumTyp": 0,  # Default to relative dates
+            "datumTyp": 0,
             "typ": "alla",
             "status": ["avbruten", "uppskjuten", "installd"],
             "alderskategori": [1, 2, 3, 4, 5],
             "kon": [3, 2, 4],
-            "sparadDatum": today
+            "sparadDatum": today,
         }
 
-        if filter:
-            if not isinstance(filter, dict):
-                raise FogisFilterValidationError("Filter parameter must be a dictionary.")
+        if filter: # If a filter dictionary is provided as 'filter' argument (for server-side date filters)
+            payload_filter.update(filter) # MERGE server-side filters from the provided dictionary
 
-            if 'datumFran' in filter:
-                if not isinstance(filter['datumFran'], str):
-                    raise FogisFilterValidationError(
-                        "Filter parameter 'datumFran' must be a string in YYYY-MM-DD format.")
-                # Basic date format validation (more robust validation could be added)
-                try:
-                    datetime.strptime(filter['datumFran'], '%Y-%m-%d')
-                except ValueError:
-                    raise FogisFilterValidationError("Filter parameter 'datumFran' must be in YYYY-MM-DD format.")
-                payload_filter['datumFran'] = filter['datumFran']
-
-            if 'datumTill' in filter:
-                if not isinstance(filter['datumTill'], str):
-                    raise FogisFilterValidationError(
-                        "Filter parameter 'datumTill' must be a string in YYYY-MM-DD format.")
-                # Basic date format validation (more robust validation could be added)
-                try:
-                    datetime.strptime(filter['datumTill'], '%Y-%m-%d')
-                except ValueError:
-                    raise FogisFilterValidationError("Filter parameter 'datumTill' must be in YYYY-MM-DD format.")
-                payload_filter['datumTill'] = filter['datumTill']
-
-            if 'datumTyp' in filter:
-                if not isinstance(filter['datumTyp'], int):
-                    raise FogisFilterValidationError("Filter parameter 'datumTyp' must be an integer.")
-                payload_filter['datumTyp'] = filter['datumTyp']
-
-            if 'status' in filter:
-                if not isinstance(filter['status'], list):
-                    raise FogisFilterValidationError("Filter parameter 'status' must be a list of strings.")
-                if not all(
-                        isinstance(item, str) for item in filter['status']):  # Check if all items in list are strings
-                    raise FogisFilterValidationError("Filter parameter 'status' must be a list of strings.")
-                payload_filter['status'] = filter['status']
-
-            if 'alderskategori' in filter:
-                if not isinstance(filter['alderskategori'], list):
-                    raise FogisFilterValidationError("Filter parameter 'alderskategori' must be a list of integers.")
-                if not all(isinstance(item, int) for item in
-                           filter['alderskategori']):  # Check if all items in list are integers
-                    raise FogisFilterValidationError("Filter parameter 'alderskategori' must be a list of integers.")
-                payload_filter['alderskategori'] = filter['alderskategori']
-
-            if 'kon' in filter:
-                if not isinstance(filter['kon'], list):
-                    raise FogisFilterValidationError("Filter parameter 'kon' must be a list of integers.")
-                if not all(isinstance(item, int) for item in filter['kon']):  # Check if all items in list are integers
-                    raise FogisFilterValidationError("Filter parameter 'kon' must be a list of integers.")
-                payload_filter['kon'] = filter['kon']
-
-            if 'sparadDatum' in filter:
-                if not isinstance(filter['sparadDatum'], str):
-                    raise FogisFilterValidationError(
-                        "Filter parameter 'sparadDatum' must be a string in YYYY-MM-DD format.")
-                try:
-                    datetime.strptime(filter['sparadDatum'], '%Y-%m-%d')
-                except ValueError:
-                    raise FogisFilterValidationError("Filter parameter 'sparadDatum' must be in YYYY-MM-DD format.")
-                payload_filter['sparadDatum'] = filter['sparadDatum']
 
         matches_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatcherAttRapportera"
-        data = self._api_request(matches_url, {"filter": payload_filter}) # Wrap payload_filter in "filter" key
-        return data['matchlista'] if data and 'matchlista' in data else None
+        data = self._api_request(matches_url, {"filter": payload_filter}) # Pass payload_filter to _api_request!
+        all_matches = data['matchlista'] if data and 'matchlista' in data else []
+        return all_matches
 
     def fetch_team_players_json(self, team_id):
         """Fetches the list of team players in JSON format for a given team ID."""

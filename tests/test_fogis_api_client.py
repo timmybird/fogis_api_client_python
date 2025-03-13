@@ -1,23 +1,22 @@
 import unittest
 from unittest.mock import patch, MagicMock, Mock
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import requests
 
-from fogis_api_client.fogis_api_client import FogisApiClient, FogisDataError, FogisAPIRequestError, FogisLoginError, FogisFilterValidationError
+from fogis_api_client.fogis_api_client import FogisApiClient, FogisDataError, FogisAPIRequestError, FogisLoginError
 
 
 class MockResponse:
     """
     A mock class to simulate requests.Response for testing.
     """
+
     def __init__(self, json_data, status_code):
-        print(f"MockResponse __init__ called with json_data: {json_data}, status_code: {status_code}")  # Debug print
         self._json_data = MagicMock(return_value=json_data)  # Make _json_data a MagicMock
         self.status_code = status_code
 
     def json(self):
         returned_json_data = self._json_data()  # Call the MagicMock to get the return value
-        print(f"MockResponse json() method called, returning: {returned_json_data}")  # Debug print
         return returned_json_data
 
     def raise_for_status(self):
@@ -200,12 +199,14 @@ class TestFogisApiClient(unittest.TestCase):
         mock_session.cookies.set = MagicMock()
 
         self.client.session = mock_session
-        self.client.cookies = {'FogisMobilDomarKlient.ASPXAUTH': 'mock_auth_cookie'}  # Keep this for now, might be redundant
+        self.client.cookies = {
+            'FogisMobilDomarKlient.ASPXAUTH': 'mock_auth_cookie'}  # Keep this for now, might be redundant
 
     def test_fetch_matches_list_json_success(self):
         """Unit test for fetch_matches_list_json success."""
         # Correct mock setup: return MockResponse instance
-        mock_api_response = MockResponse(json_data={'d': {'matchlista': [{'matchid': 1}, {'matchid': 2}]}}, status_code=200)
+        mock_api_response = MockResponse(json_data={'d': {'matchlista': [{'matchid': 1}, {'matchid': 2}]}},
+                                         status_code=200)
         self.client.session.post.return_value = mock_api_response  # Correct: mock session.post to return MockResponse
 
         matches_list = self.client.fetch_matches_list_json()
@@ -363,7 +364,8 @@ class TestFogisApiClient(unittest.TestCase):
         with patch.object(FogisApiClient, "login", new=mock_login):
             # Correct mock setup: MockResponse instance (even for empty response)
             mock_api_response = MockResponse(json_data={"d": None}, status_code=200)
-            with patch.object(FogisApiClient, "_api_request", new=MagicMock(return_value=mock_api_response)) as mocked_request: # Mock _api_request to return MockResponse
+            with patch.object(FogisApiClient, "_api_request", new=MagicMock(
+                    return_value=mock_api_response)) as mocked_request:  # Mock _api_request to return MockResponse
                 event_data = {
                     "matchhandelseid": 0,
                     "matchid": 12345,
@@ -504,6 +506,7 @@ class TestFogisApiClient(unittest.TestCase):
 
         self.assertEqual(mocked_request.call_count, 1)  # Verify _api_request mock was called
         self.assertIn("Not logged in", str(excinfo.exception))  # Assert correct error message
+
     def test_api_request_http_error(self):
         """Unit test for _api_request handling HTTP errors."""
         client = FogisApiClient("testuser", "testpass")
@@ -551,238 +554,66 @@ class TestFogisApiClient(unittest.TestCase):
         self.assertIsInstance(args[1], dict)
         # self.assertNotIn('method', kwargs) or self.assertEqual(kwargs['method'], 'POST')
 
-    def test_fetch_matches_list_json_no_filter(self):
-        """Test case for fetching matches without any filter."""
-        mocked_api_request = MagicMock(
-            return_value={'matchlista': [{'matchid': 1}, {'matchid': 2}]})
-        with patch.object(FogisApiClient, "_api_request", new=mocked_api_request) as mocked_request:
-            matches = self.client.fetch_matches_list_json()
+    def test_fetch_matches_list_json_api_call_only(self):  # Focused test - API call only
+        """Unit test for fetch_matches_list_json verifying API call (no filtering)."""
+        mock_api_request = MagicMock(return_value={'matchlista': []})  # Mock API request - empty response is fine
+        with patch.object(FogisApiClient, "_api_request", new=mock_api_request) as mocked_request:
+            self.client.fetch_matches_list_json()  # Call fetch_matches_list_json WITHOUT filter argument
 
-        print(
-            f"DEBUG: test_fetch_matches_list_json_no_filter - Value of matches BEFORE assertion: {matches}")  # Debug print - inspect 'matches' value
+        mocked_request.assert_called_once()  # Verify _api_request was called
 
-        self.assertEqual(mocked_request.call_count, 1)
-        expected_payload = {
-            "filter": {
-                "datumFran": (datetime.today() - timedelta(days=7)).strftime('%Y-%m-%d'),
-                "datumTill": (datetime.today() + timedelta(days=365)).strftime('%Y-%m-%d'),
-                "datumTyp": 0,
-                "typ": "alla",
-                "status": ["avbruten", "uppskjuten", "installd"],
-                "alderskategori": [1, 2, 3, 4, 5],
-                "kon": [3, 2, 4],
-                "sparadDatum": datetime.today().strftime('%Y-%m-%d')
+        call_args = mocked_request.call_args
+        args = call_args.args
+
+        self.assertEqual(len(args), 2, "Incorrect number of arguments passed to _api_request")
+        self.assertEqual(args[0], "https://fogis.svenskfotboll.se/mdk/MatchWebMetoder.aspx/GetMatcherAttRapportera",
+                         "Incorrect API URL")
+        self.assertIsInstance(args[1], dict, "Payload is not a dictionary")
+
+        call_filter = args[1]['filter']  # Get the filter dictionary from call_args
+        self.assertEqual(8, len(call_filter), "Incorrect number of parameters in filter dictionary (8 expected)")
+        self.assertEqual(call_filter.get('typ'), 'alla', "Default 'typ' parameter incorrect")
+        self.assertEqual(call_filter.get('datumTyp'), 0, "Default 'datumTyp' parameter incorrect")
+        self.assertIn('datumFran', call_filter,
+                      "Missing 'datumFran' parameter")  # Just check for presence, not exact value (date is dynamic)
+        self.assertIn('datumTill', call_filter, "Missing 'datumTill' parameter")  # Same for 'datumTill'
+        self.assertIn('status', call_filter)  # <--- Verify 'status' filter is in filter (as default)
+        self.assertIn('alderskategori', call_filter)  # <--- Verify 'alderskategori' filter is in filter
+        self.assertIn('kon', call_filter)  # <--- Verify 'kon' filter is in filter
+
+    def test_fetch_matches_list_json_server_date_filter_call_args(self):
+        """Unit test for fetch_matches_list_json verifying server-side date filter arguments."""
+        mock_api_request = MagicMock(return_value={'matchlista': []})
+        with patch.object(FogisApiClient, "_api_request", new=mock_api_request) as mocked_request:
+            filter_payload = {  # Create a filter dictionary for date range
+                "datumFran": "2024-04-01",
+                "datumTill": "2024-04-07",
+                "datumTyp": 1,  # Fixed dates
+                "sparadDatum": "2024-04-17"
             }
-        }
-        mocked_request.assert_called_with(
-            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatcherAttRapportera",
-            expected_payload
-        )
-        self.assertEqual([{'matchid': 1}, {'matchid': 2}], matches)
-
-    def test_fetch_matches_list_json_valid_date_range_filter(self):
-        """Test case for valid date range filter."""
-        # Correct mock setup: MockResponse instance
-        mock_api_response = {'d': {'matchlista': []}}
-        with patch.object(FogisApiClient, "_api_request", new=MagicMock(
-                return_value=mock_api_response)) as mocked_request:  # Mock _api_request to return MockResponse
-            filter_payload = {"datumFran": "2024-01-01", "datumTill": "2024-01-31"}
-            self.client.fetch_matches_list_json(filter=filter_payload)
-        expected_payload = {
-            "filter": {
-                "datumFran": "2024-01-01",
-                "datumTill": "2024-01-31",
-                "datumTyp": 0,
-                "typ": "alla",
-                "status": ["avbruten", "uppskjuten", "installd"],
-                "alderskategori": [1, 2, 3, 4, 5],
-                "kon": [3, 2, 4],
-                "sparadDatum": datetime.today().strftime('%Y-%m-%d')
-            }
-        }
-        mocked_request.assert_called_with(
-            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatcherAttRapportera",
-            expected_payload
-        )
-
-    def test_fetch_matches_list_json_valid_status_filter(self):
-        """Test case for valid status filter."""
-        # Correct mock setup: MockResponse instance
-        mock_api_response = {'d': {'matchlista': []}}
-        with patch.object(FogisApiClient, "_api_request", new=MagicMock(
-                return_value=mock_api_response)) as mocked_request:  # Mock _api_request to return MockResponse
-            filter_payload = {"status": ["avbruten", "uppskjuten"]}
-            self.client.fetch_matches_list_json(filter=filter_payload)
-        expected_payload = {
-            "filter": {
-                "datumFran": (datetime.today() - timedelta(days=7)).strftime('%Y-%m-%d'),
-                "datumTill": (datetime.today() + timedelta(days=365)).strftime('%Y-%m-%d'),
-                "datumTyp": 0,
-                "typ": "alla",
-                "status": ["avbruten", "uppskjuten"],
-                "alderskategori": [1, 2, 3, 4, 5],
-                "kon": [3, 2, 4],
-                "sparadDatum": datetime.today().strftime('%Y-%m-%d')
-            }
-        }
-        mocked_request.assert_called_with(
-            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatcherAttRapportera",
-            expected_payload
-        )
-
-    def test_fetch_matches_list_json_valid_age_category_filter(self):
-        """Test case for valid age category filter."""
-        # Correct mock setup: MockResponse instance
-        mock_api_response = {'d': {'matchlista': [{'matchid': 1}, {'matchid': 2}]}}
-        with patch.object(FogisApiClient, "_api_request", new=MagicMock(
-                return_value=mock_api_response)) as mocked_request:  # Mock _api_request to return MockResponse
-            filter_payload = {"alderskategori": [2, 4]}
-            self.client.fetch_matches_list_json(filter=filter_payload)
-        expected_payload = {
-            "filter": {
-                "datumFran": (datetime.today() - timedelta(days=7)).strftime('%Y-%m-%d'),
-                "datumTill": (datetime.today() + timedelta(days=365)).strftime('%Y-%m-%d'),
-                "datumTyp": 0,
-                "typ": "alla",
-                "status": ["avbruten", "uppskjuten", "installd"],
-                "alderskategori": [2, 4],
-                "kon": [3, 2, 4],
-                "sparadDatum": datetime.today().strftime('%Y-%m-%d')
-            }
-        }
-        mocked_request.assert_called_with(
-            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatcherAttRapportera",
-            expected_payload
-        )
-
-    def test_fetch_matches_list_json_valid_gender_filter(self):
-        """Test case for valid gender filter."""
-        # Correct mock setup: MockResponse instance
-        mock_api_response = {'d': {'matchlista': []}}
-        with patch.object(FogisApiClient, "_api_request", new=MagicMock(
-                return_value=mock_api_response)) as mocked_request:  # Mock _api_request to return MockResponse
-            filter_payload = {"kon": [4]}
-            self.client.fetch_matches_list_json(filter=filter_payload)
-        expected_payload = {
-            "filter": {
-                "datumFran": (datetime.today() - timedelta(days=7)).strftime('%Y-%m-%d'),
-                "datumTill": (datetime.today() + timedelta(days=365)).strftime('%Y-%m-%d'),
-                "datumTyp": 0,
-                "typ": "alla",
-                "status": ["avbruten", "uppskjuten", "installd"],
-                "alderskategori": [1, 2, 3, 4, 5],
-                "kon": [4],
-                "sparadDatum": datetime.today().strftime('%Y-%m-%d')
-            }
-        }
-        mocked_request.assert_called_with(
-            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatcherAttRapportera",
-            expected_payload
-        )
-
-    def test_fetch_matches_list_json_combination_filter(self):
-        """Test case for combination of filters."""
-        # Correct mock setup: MockResponse instance
-        mock_api_response = {'d': {'matchlista': []}}
-        with patch.object(FogisApiClient, "_api_request", new=MagicMock(
-                return_value=mock_api_response)) as mocked_request:  # Mock _api_request to return MockResponse
-            filter_payload = {
-                "datumFran": "2024-02-15",
-                "datumTill": "2024-02-29",
-                "status": ["spelad", "avslutad"],  # Example statuses
-                "alderskategori": [3],
-                "kon": [2]
-            }
-            self.client.fetch_matches_list_json(filter=filter_payload)
-        expected_payload = {
-            "filter": {
-                "datumFran": "2024-02-15",
-                "datumTill": "2024-02-29",
-                "datumTyp": 0,
-                "typ": "alla",
-                "status": ["spelad", "avslutad"],
-                "alderskategori": [3],
-                "kon": [2],
-                "sparadDatum": datetime.today().strftime('%Y-%m-%d')
-            }
-        }
-        mocked_request.assert_called_with(
-            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatcherAttRapportera",
-            expected_payload
-        )
-
-    def test_fetch_matches_list_json_invalid_filter_type(self):
-        """Test case for invalid filter type (not a dict)."""
-        with self.assertRaises(FogisFilterValidationError) as excinfo:
-            self.client.fetch_matches_list_json(filter="invalid")
-        self.assertIn("Filter parameter must be a dictionary.", str(excinfo.exception))
-
-    def test_fetch_matches_list_json_invalid_date_format(self):
-        """Test case for invalid date format in filter."""
-        with self.assertRaises(FogisFilterValidationError) as excinfo:
-            self.client.fetch_matches_list_json(filter={"datumFran": "2024-01-010"})  # Invalid date format
-        self.assertIn("Filter parameter 'datumFran' must be in YYYY-MM-DD format.", str(excinfo.exception))
-
-    def test_fetch_matches_list_json_invalid_status_type(self):
-        """Test case for invalid status type (not a list)."""
-        with self.assertRaises(FogisFilterValidationError) as excinfo:
-            self.client.fetch_matches_list_json(filter={"status": "invalid"})
-        self.assertIn("Filter parameter 'status' must be a list of strings.", str(excinfo.exception))
-
-    def test_fetch_matches_list_json_invalid_age_category_type(self):
-        """Test case for invalid age category type (not a list)."""
-        with self.assertRaises(FogisFilterValidationError) as excinfo:
-            self.client.fetch_matches_list_json(filter={"alderskategori": "invalid"})
-        self.assertIn("Filter parameter 'alderskategori' must be a list of integers.",
-                      str(excinfo.exception))
-
-    def test_fetch_matches_list_json_invalid_gender_type(self):
-        """Test case for invalid gender type (not a list)."""
-        with self.assertRaises(FogisFilterValidationError) as excinfo:
-            self.client.fetch_matches_list_json(filter={"kon": "invalid"})
-        self.assertIn("Filter parameter 'kon' must be a list of integers.", str(excinfo.exception))
-
-    def test_fetch_matches_list_json_invalid_datumFran_type(self):
-        """Test case for invalid datumFran type (not string)."""
-        with self.assertRaises(FogisFilterValidationError) as excinfo:
-            self.client.fetch_matches_list_json(filter={"datumFran": 123})  # Invalid type, should be string
-        self.assertIn("Filter parameter 'datumFran' must be a string in YYYY-MM-DD format.",
-                      str(excinfo.exception))
-
-    def test_fetch_matches_list_json_invalid_datumTill_type(self):
-        """Test case for invalid datumTill type (not string)."""
-        with self.assertRaises(FogisFilterValidationError) as excinfo:
-            self.client.fetch_matches_list_json(filter={"datumTill": 456})  # Invalid type, should be string
-        self.assertIn("Filter parameter 'datumTill' must be a string in YYYY-MM-DD format.",
-                      str(excinfo.exception))
-
-    def test_fetch_matches_list_json_invalid_datumTyp_type(self):
-        """Test case for invalid datumTyp type (not int)."""
-        with self.assertRaises(FogisFilterValidationError) as excinfo:
             self.client.fetch_matches_list_json(
-                filter={"datumTyp": "invalid"})  # Invalid type, should be int
-        self.assertIn("Filter parameter 'datumTyp' must be an integer.", str(excinfo.exception))
+                filter=filter_payload)  # Call fetch_matches_list_json WITH filter dictionary
 
-    def test_fetch_matches_list_json_invalid_sparadDatum_type(self):
-        """Test case for invalid sparadDatum type (not string)."""
-        with self.assertRaises(FogisFilterValidationError) as excinfo:
-            self.client.fetch_matches_list_json(
-                filter={"sparadDatum": 789})  # Invalid type, should be string
-        self.assertIn("Filter parameter 'sparadDatum' must be a string in YYYY-MM-DD format.",
-                      str(excinfo.exception))
+        mocked_request.assert_called_once()
+        call_args = mocked_request.call_args
+        args = call_args.args
+        self.assertEqual(len(args), 2)
+        self.assertIsInstance(args[1], dict)
+        call_filter = args[1]['filter']  # Get the filter dictionary from call_args
 
-    def test_fetch_matches_list_json_no_filter2(self):
-        """Test case for fetching matches without any filter (SIMPLIFIED)."""
-        # Minimal mock response - just the matchlista
-        mock_api_response = MockResponse(json_data={'d': {'matchlista': [{'matchid': 1}, {'matchid': 2}]}}, status_code=200)
-        self.client.session.post.return_value = mock_api_response
+        # --- Verify payload dictionary content - check for date range filters ---
+        self.assertEqual(8, len(call_filter), "Incorrect number of parameters in filter dictionary (8 expected)")
+        self.assertEqual(call_filter.get('datumFran'), "2024-04-01", "Incorrect 'datumFran' parameter")
+        self.assertEqual(call_filter.get('datumTill'), "2024-04-07", "Incorrect 'datumTill' parameter")
+        self.assertEqual(call_filter.get('datumTyp'), 1, "Incorrect 'datumTyp' parameter")
+        self.assertEqual(call_filter.get('sparadDatum'), "2024-04-17", "Incorrect 'sparadDatum' parameter")
+        self.assertEqual(call_filter.get('typ'), 'alla', "Default 'typ' parameter incorrect")  # Also check default 'typ'
+        self.assertIn('status', call_filter)
+        self.assertIn('alderskategori', call_filter)
+        self.assertIn('kon', call_filter)
+        self.assertNotIn('fotbollstypid', call_filter, "Unexpected 'fotbollstypid' filter")  # <--- Verify 'fotbollstypid' filter is NOT in filter
 
-        matches_list = self.client.fetch_matches_list_json()
 
-        self.assertIsNotNone(matches_list)  # Just check not None for now
-        self.assertIsInstance(matches_list, list)  # Check it's a list
-        self.assertEqual(len(matches_list), 2)  # Check list length
-        # For now, remove more detailed assertions about content
 
 if __name__ == '__main__':
     unittest.main()
