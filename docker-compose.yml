@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  fogis-api-client:
+    build:
+      context: .
+    container_name: fogis-api-client-service
+    networks:
+      - fogis-network
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    restart: unless-stopped
+
+networks:
+  fogis-network:
+    external: true

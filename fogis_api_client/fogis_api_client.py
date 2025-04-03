@@ -291,3 +291,6 @@ class FogisApiClient:
         else:
             print("No match events found to clear.")
             return False
+
+    def hello_world(self):
+        return "Hello, brave new world!"

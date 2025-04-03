@@ -22,6 +22,7 @@ setuptools.setup(
     install_requires=[
         "requests",
         "beautifulsoup4",
+        "flask",
     ],
     extras_require={
         'dev': [
