@@ -1,0 +1,108 @@
+name: Docker Build and Test
+
+on:
+  push:
+    branches: [ "main", "feature/*" ]
+  pull_request:
+    branches: [ "main" ]
+  release:
+    types: [published]
+
+jobs:
+  docker-build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build development Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.dev
+          push: false
+          load: true
+          tags: fogis-api-client:dev
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Create test environment
+        run: |
+          mkdir -p data logs test-results
+          echo "FOGIS_USERNAME=test_user" > .env.dev
+          echo "FOGIS_PASSWORD=test_password" >> .env.dev
+          echo "FLASK_ENV=development" >> .env.dev
+          echo "FLASK_DEBUG=1" >> .env.dev
+
+      - name: Run integration tests
+        run: |
+          docker compose -f docker-compose.dev.yml up -d fogis-api-client
+          
+          # Wait for the service to be healthy
+          echo "Waiting for API service to be healthy..."
+          attempt=0
+          max_attempts=10
+          until docker ps | grep -q "fogis-api-client-dev.*healthy" || [ $attempt -eq $max_attempts ]; do
+            attempt=$((attempt+1))
+            echo "Attempt $attempt of $max_attempts..."
+            sleep 5
+          done
+          
+          if [ $attempt -eq $max_attempts ]; then
+            echo "Service did not become healthy in time"
+            docker compose -f docker-compose.dev.yml logs
+            exit 1
+          fi
+          
+          # Run the tests
+          docker compose -f docker-compose.dev.yml run --rm integration-tests
+          
+          # Capture the exit code
+          TEST_EXIT_CODE=$?
+          
+          # Stop the services
+          docker compose -f docker-compose.dev.yml down
+          
+          # Return the test exit code
+          exit $TEST_EXIT_CODE
+
+  docker-build-prod:
+    runs-on: ubuntu-latest
+    needs: docker-build-test
+    if: github.event_name == 'release'  # Only run on release events
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/fogis-api-client
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=branch
+            type=sha
+
+      - name: Build and push production Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
