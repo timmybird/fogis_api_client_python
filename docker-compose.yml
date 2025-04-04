@@ -4,15 +4,46 @@ services:
   fogis-api-client:
     build:
       context: .
+      dockerfile: Dockerfile
     container_name: fogis-api-client-service
     networks:
       - fogis-network
     ports:
       - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
     env_file:
       - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=Europe/Stockholm
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/hello"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Add stop grace period to control shutdown behavior
+    stop_grace_period: 10s
+    # Add init: true to handle signals properly
+    init: true
 
 networks:
   fogis-network:
     external: true
+    name: fogis-network

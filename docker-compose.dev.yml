@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  fogis-api-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: fogis-api-client-dev
+    networks:
+      - fogis-network
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+      - ./data:/app/data
+      - ./logs:/app/logs
+      # Don't mount the venv directory to avoid conflicts
+      - /app/.venv
+    env_file:
+      - .env.dev
+    environment:
+      - PYTHONUNBUFFERED=1
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - TZ=Europe/Stockholm
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/hello"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    init: true
+    restart: unless-stopped
+    command: ["python", "fogis_api_client_http_wrapper.py"]
+
+  integration-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: fogis-api-client-tests
+    networks:
+      - fogis-network
+    volumes:
+      - ./tests:/app/tests
+      - ./integration_tests:/app/integration_tests
+      - ./test-results:/app/test-results
+    environment:
+      - PYTHONUNBUFFERED=1
+      - API_URL=http://fogis-api-client-dev:8080
+    depends_on:
+      fogis-api-client:
+        condition: service_healthy
+    command: ["pytest", "integration_tests", "-v"]
+
+networks:
+  fogis-network:
+    external: true
+    name: fogis-network

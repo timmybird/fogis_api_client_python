@@ -1,10 +1,21 @@
 import os
+import signal
+import sys
 from flask import Flask, jsonify
+try:
+    from flask_cors import CORS  # Import CORS for development
+except ImportError:
+    # CORS is optional, only needed for development
+    CORS = None
 
 from fogis_api_client.fogis_api_client import FogisApiClient
 
+# Get environment variables
 fogis_username = os.environ.get("FOGIS_USERNAME")
 fogis_password = os.environ.get("FOGIS_PASSWORD")
+debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
+
+# Initialize the Fogis API client
 client = FogisApiClient(fogis_username, fogis_password)
 client.login()
 
@@ -37,6 +48,8 @@ def fetch_match_details_from_fogis_api(match_id):
 
 
 app = Flask(__name__)
+if CORS is not None:
+    CORS(app)  # Enable CORS for development
 
 
 @app.route('/matches')
@@ -70,5 +83,23 @@ def index():
     return jsonify(my_list, ensure_ascii=False)
 
 
+# Handle signals for graceful shutdown
+def signal_handler(sig, frame):
+    print('Received shutdown signal, exiting gracefully...')
+    # Perform any cleanup here if needed
+    sys.exit(0)
+
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    # Register signal handlers
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    # Use threaded mode in development for hot reloading
+    if debug_mode:
+        print("Running in DEBUG mode")
+        app.run(host='0.0.0.0', port=8080, debug=True)
+    else:
+        print("Running in PRODUCTION mode")
+        # Use threaded=False to avoid issues with signal handling in production
+        app.run(host='0.0.0.0', port=8080, debug=False, threaded=False)
