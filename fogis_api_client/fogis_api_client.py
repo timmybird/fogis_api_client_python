@@ -53,7 +53,10 @@ class FogisFilterValidationError(FogisAPIError):
 class FogisApiClient:
     """
     A client for interacting with the FOGIS API.
-    ...
+    
+    This client implements lazy login, meaning it will automatically authenticate
+    when making API requests if not already logged in. You can also explicitly call
+    login() if you want to pre-authenticate.
     """
     BASE_URL = "https://fogis.svenskfotboll.se/mdk"  # Define base URL as a class constant
     logger = logging.getLogger(__name__)
@@ -61,7 +64,13 @@ class FogisApiClient:
     def __init__(self, username, password):
         """
         Initializes the FogisApiClient with login credentials.
-        ...
+        
+        Authentication happens automatically on the first API request (lazy login),
+        but you can also call login() explicitly if needed.
+        
+        Args:
+            username (str): FOGIS username
+            password (str): FOGIS password
         """
         self.username = username
         self.password = password
@@ -69,7 +78,19 @@ class FogisApiClient:
         self.cookies = None
 
     def login(self):
-        """Logs into the FOGIS API and stores the session cookies."""
+        """
+        Logs into the FOGIS API and stores the session cookies.
+        
+        Note: It is not necessary to call this method explicitly as the client
+        implements lazy login and will authenticate automatically when needed.
+        
+        Returns:
+            dict: The session cookies if login is successful
+        
+        Raises:
+            FogisLoginError: If login fails
+            FogisAPIRequestError: If there is an error during the login request
+        """
         if self.cookies:
             return self.cookies
 
@@ -130,11 +151,30 @@ class FogisApiClient:
     def _api_request(self, url, payload=None, method='POST'):
         """
         Internal helper function to make API requests to FOGIS.
-        ...
+        Automatically logs in if not already authenticated.
+        
+        Args:
+            url (str): The URL to make the request to
+            payload (dict, optional): The payload to send with the request
+            method (str, optional): The HTTP method to use (default: 'POST')
+            
+        Returns:
+            dict: The response data from the API
+            
+        Raises:
+            FogisLoginError: If login fails
+            FogisAPIRequestError: If there is an error with the API request
+            FogisDataError: If the response data is invalid
         """
+        # Lazy login - automatically log in if not already authenticated
         if not self.cookies:
-            self.logger.error("Error: Not logged in. Please call login() first.")
-            raise FogisLoginError("Not logged in. Please call login() first.")
+            self.logger.info("Not logged in. Performing automatic login...")
+            self.login()
+            
+            # Double-check that login was successful
+            if not self.cookies:
+                self.logger.error("Automatic login failed.")
+                raise FogisLoginError("Automatic login failed.")
 
         api_headers = {
             'Content-Type': 'application/json; charset=UTF-8',
