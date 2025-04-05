@@ -55,4 +55,6 @@ services:
 networks:
   fogis-network:
     name: fogis-network
-    # Not setting external: true allows Docker Compose to create the network if it doesn't exist
+    external: true
+    # Note: The network must be created before running docker-compose
+    # Use: docker network create fogis-network

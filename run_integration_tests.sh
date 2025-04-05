@@ -3,9 +3,12 @@
 # Create necessary directories if they don't exist
 mkdir -p test-results
 
-# Create Docker network if it doesn't exist
-echo "Creating Docker network if it doesn't exist..."
-docker network create fogis-network 2>/dev/null || true
+# Ensure the Docker network exists
+echo "Ensuring Docker network exists..."
+# First remove any existing network with the same name that might not be created by compose
+docker network rm fogis-network 2>/dev/null || true
+# Then create a fresh network
+docker network create fogis-network
 
 # Start the development environment if it's not already running
 if ! docker ps | grep -q fogis-api-client-dev; then
