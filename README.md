@@ -3,12 +3,10 @@
 
 #### Features
 * Authentication with FOGIS API.
+* Lazy login - automatically authenticates when needed.
 * Fetching match lists, team players, officials, and events.
 * Reporting match events and results.
 * Error handling and logging.
-* HTTP API wrapper with Docker support
-* Development environment with integration tests
-
 ---
 #### Installation
 ```bash
@@ -28,7 +26,7 @@ password = "your_fogis_password"
 
 try:
     client = FogisApiClient(username, password)
-    client.login()
+    # No need to call login() explicitly - the client implements lazy login
     matches = client.fetch_matches_list_json()
     if matches:
         print(f"Found {len(matches)} matches.")
@@ -40,6 +38,14 @@ except FogisAPIRequestError as e:
     print(f"API request error: {e}")
 except Exception as e:
     print(f"An unexpected error occurred: {e}")
+```
+
+You can also call `login()` explicitly if you want to pre-authenticate:
+
+```python
+client = FogisApiClient(username, password)
+client.login()  # Explicitly authenticate
+# ... make API requests
 ```
 
 ---
@@ -100,8 +106,6 @@ The package includes custom exceptions for common API errors:
 
 #### Contributing
 Contributions are welcome! Please open an issue or a pull request if you find any bugs or have suggestions.
-
-See [README.dev.md](README.dev.md) for development setup instructions.
 
 ---
 #### License
