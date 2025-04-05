@@ -16,7 +16,7 @@ git fetch origin main
 
 # Run unit tests
 echo "Running unit tests..."
-python -m unittest discover
+python3 -m unittest discover
 
 # Check if Docker is available
 if command -v docker &> /dev/null; then
