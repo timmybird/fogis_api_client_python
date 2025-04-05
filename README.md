@@ -95,17 +95,41 @@ The HTTP API wrapper provides the following endpoints:
 - `GET /match/<match_id>` - Returns details for a specific match
 
 ---
+#### Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature-name`
+3. Make your changes
+4. Run the pre-merge check to ensure all tests pass:
+   ```bash
+   ./pre-merge-check.sh
+   ```
+5. Commit your changes: `git commit -m "Add your feature"`
+6. Push to the branch: `git push origin feature/your-feature-name`
+7. Create a pull request
+
+##### Pre-Merge Check
+
+Before merging any changes, always run the pre-merge check script to ensure all tests pass:
+
+```bash
+./pre-merge-check.sh
+```
+
+This script:
+- Runs all unit tests
+- Builds and tests the Docker image (if Docker is available)
+- Ensures your changes won't break existing functionality
+
+---
 #### Error Handling
 The package includes custom exceptions for common API errors:
 
 `FogisLoginError`: Raised when login fails.
 
 `FogisAPIRequestError`: Raised for general API request errors.
-
----
-
-#### Contributing
-Contributions are welcome! Please open an issue or a pull request if you find any bugs or have suggestions.
 
 ---
 #### License
