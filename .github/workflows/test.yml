@@ -25,6 +25,7 @@ jobs:
           source ./.venv/bin/activate
           python -m pip install --upgrade pip setuptools wheel
           pip install -e .[dev]
+          pip install docker
 
       - name: Lint with flake8
         run: |

@@ -30,6 +30,7 @@ setuptools.setup(
             'pytest-mock',
             'pytest-cov',
             'flake8',
+            'docker',
         ],
     },
     include_package_data=True,
