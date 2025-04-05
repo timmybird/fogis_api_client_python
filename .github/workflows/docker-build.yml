@@ -52,7 +52,13 @@ jobs:
           echo "Waiting for API service to be healthy..."
           attempt=0
           max_attempts=20
-          until docker ps | grep -q "fogis-api-client-dev.*healthy" || [ $attempt -eq $max_attempts ]; do
+
+          # Show initial container status
+          echo "Initial container status:"
+          docker ps
+
+          # Wait for the service to be responsive
+          until curl -s http://localhost:8080/ > /dev/null || [ $attempt -eq $max_attempts ]; do
             attempt=$((attempt+1))
             echo "Attempt $attempt of $max_attempts..."
             sleep 5
@@ -66,10 +72,13 @@ jobs:
           done
 
           if [ $attempt -eq $max_attempts ]; then
-            echo "Service did not become healthy in time"
+            echo "Service did not become responsive in time"
             docker compose -f docker-compose.dev.yml logs
             exit 1
           fi
+
+          # If we got here, the service is responsive
+          echo "Service is responsive, proceeding with tests"
 
           # Run the tests
           docker compose -f docker-compose.dev.yml run --rm integration-tests

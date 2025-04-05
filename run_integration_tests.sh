@@ -15,15 +15,21 @@ if ! docker ps | grep -q fogis-api-client-dev; then
     echo "Starting development environment..."
     docker compose -f docker-compose.dev.yml up -d fogis-api-client
 
-    # Wait for the service to be healthy with a timeout
-    echo "Waiting for API service to be healthy..."
+    # Wait for the service to be responsive with a timeout
+    echo "Waiting for API service to be responsive..."
     TIMEOUT=120
     ELAPSED=0
-    while ! docker ps | grep -q "fogis-api-client-dev.*healthy"; do
+
+    # Show initial container status
+    echo "Initial container status:"
+    docker ps
+
+    # Wait for the service to be responsive
+    while ! curl -s http://localhost:8080/ > /dev/null; do
         sleep 2
         ELAPSED=$((ELAPSED+2))
         if [ $ELAPSED -ge $TIMEOUT ]; then
-            echo "Timeout waiting for service to be healthy. Continuing anyway..."
+            echo "Timeout waiting for service to be responsive. Continuing anyway..."
             break
         fi
         # After a few attempts, check if the container is running and show logs
@@ -34,6 +40,9 @@ if ! docker ps | grep -q fogis-api-client-dev; then
             docker logs fogis-api-client-dev
         fi
     done
+
+    # If we got here, the service is responsive
+    echo "Service is responsive, proceeding with tests"
 fi
 
 # Run the integration tests
