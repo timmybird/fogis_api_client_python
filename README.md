@@ -89,10 +89,35 @@ For more details on the development environment, see [README.dev.md](README.dev.
 
 The HTTP API wrapper provides the following endpoints:
 
+##### Basic Endpoints
 - `GET /` - Returns a test JSON response
 - `GET /hello` - Returns a simple hello world message
+
+##### Match Endpoints
 - `GET /matches` - Returns a list of matches
+- `POST /matches/filter` - Returns a filtered list of matches based on provided criteria
 - `GET /match/<match_id>` - Returns details for a specific match
+- `GET /match/<match_id>/result` - Returns result information for a specific match
+- `GET /match/<match_id>/officials` - Returns officials information for a specific match
+- `POST /match/<match_id>/finish` - Marks a match report as completed/finished
+
+##### Match Events Endpoints
+- `GET /match/<match_id>/events` - Returns events for a specific match
+- `POST /match/<match_id>/events` - Reports a new event for a match
+- `POST /match/<match_id>/events/clear` - Clears all events for a match
+
+##### Team Endpoints
+- `GET /team/<team_id>/players` - Returns player information for a specific team
+- `GET /team/<team_id>/officials` - Returns officials information for a specific team
+
+##### Filter Parameters
+The `/matches/filter` endpoint accepts the following parameters in the request body (JSON):
+- `from_date` - Start date for filtering matches (format: YYYY-MM-DD)
+- `to_date` - End date for filtering matches (format: YYYY-MM-DD)
+- `status` - Match status (e.g., "upcoming", "completed")
+- `age_category` - Age category for filtering matches
+- `gender` - Gender for filtering matches
+- `football_type` - Type of football (e.g., "indoor", "outdoor")
 
 ---
 #### Contributing
