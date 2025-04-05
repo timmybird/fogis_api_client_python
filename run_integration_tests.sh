@@ -17,7 +17,7 @@ if ! docker ps | grep -q fogis-api-client-dev; then
 
     # Wait for the service to be healthy with a timeout
     echo "Waiting for API service to be healthy..."
-    TIMEOUT=60
+    TIMEOUT=120
     ELAPSED=0
     while ! docker ps | grep -q "fogis-api-client-dev.*healthy"; do
         sleep 2
@@ -25,6 +25,13 @@ if ! docker ps | grep -q fogis-api-client-dev; then
         if [ $ELAPSED -ge $TIMEOUT ]; then
             echo "Timeout waiting for service to be healthy. Continuing anyway..."
             break
+        fi
+        # After a few attempts, check if the container is running and show logs
+        if [ $ELAPSED -eq 20 ]; then
+            echo "Container status:"
+            docker ps
+            echo "Container logs so far:"
+            docker logs fogis-api-client-dev
         fi
     done
 fi

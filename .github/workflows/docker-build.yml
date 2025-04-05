@@ -51,11 +51,18 @@ jobs:
           # Wait for the service to be healthy
           echo "Waiting for API service to be healthy..."
           attempt=0
-          max_attempts=10
+          max_attempts=20
           until docker ps | grep -q "fogis-api-client-dev.*healthy" || [ $attempt -eq $max_attempts ]; do
             attempt=$((attempt+1))
             echo "Attempt $attempt of $max_attempts..."
             sleep 5
+            # After a few attempts, check if the container is running and show logs
+            if [ $attempt -eq 5 ]; then
+              echo "Container status:"
+              docker ps
+              echo "Container logs so far:"
+              docker logs fogis-api-client-dev
+            fi
           done
 
           if [ $attempt -eq $max_attempts ]; then
