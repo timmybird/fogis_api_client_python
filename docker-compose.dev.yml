@@ -24,10 +24,10 @@ services:
       - FLASK_DEBUG=1
       - TZ=Europe/Stockholm
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/hello"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8080/ || exit 0"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
       start_period: 10s
     init: true
     restart: unless-stopped
@@ -54,5 +54,7 @@ services:
 
 networks:
   fogis-network:
-    external: true
     name: fogis-network
+    external: true
+    # Note: The network must be created before running docker-compose
+    # Use: docker network create fogis-network

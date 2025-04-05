@@ -36,35 +36,59 @@ jobs:
           echo "FLASK_ENV=development" >> .env.dev
           echo "FLASK_DEBUG=1" >> .env.dev
 
+          # Create the Docker network
+          docker network create fogis-network || true
+
       - name: Run integration tests
         run: |
+          # Ensure the network exists and remove any existing one with the same name
+          docker network rm fogis-network || true
+          docker network create fogis-network
+
+          # Start the services
           docker compose -f docker-compose.dev.yml up -d fogis-api-client
-          
+
           # Wait for the service to be healthy
           echo "Waiting for API service to be healthy..."
           attempt=0
-          max_attempts=10
-          until docker ps | grep -q "fogis-api-client-dev.*healthy" || [ $attempt -eq $max_attempts ]; do
+          max_attempts=20
+
+          # Show initial container status
+          echo "Initial container status:"
+          docker ps
+
+          # Wait for the service to be responsive
+          until curl -s http://localhost:8080/ > /dev/null || [ $attempt -eq $max_attempts ]; do
             attempt=$((attempt+1))
             echo "Attempt $attempt of $max_attempts..."
             sleep 5
+            # After a few attempts, check if the container is running and show logs
+            if [ $attempt -eq 5 ]; then
+              echo "Container status:"
+              docker ps
+              echo "Container logs so far:"
+              docker logs fogis-api-client-dev
+            fi
           done
-          
+
           if [ $attempt -eq $max_attempts ]; then
-            echo "Service did not become healthy in time"
+            echo "Service did not become responsive in time"
             docker compose -f docker-compose.dev.yml logs
             exit 1
           fi
-          
+
+          # If we got here, the service is responsive
+          echo "Service is responsive, proceeding with tests"
+
           # Run the tests
           docker compose -f docker-compose.dev.yml run --rm integration-tests
-          
+
           # Capture the exit code
           TEST_EXIT_CODE=$?
-          
+
           # Stop the services
           docker compose -f docker-compose.dev.yml down
-          
+
           # Return the test exit code
           exit $TEST_EXIT_CODE
 

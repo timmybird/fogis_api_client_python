@@ -14,21 +14,24 @@ fi
 echo "Fetching latest main branch..."
 git fetch origin main
 
-# Run unit tests but don't fail if they don't pass (temporary until tests are fixed)
+# Run unit tests and fail if they don't pass
 echo "Running unit tests..."
-python3 -m unittest discover || echo "Note: Some tests are failing. This is expected until all tests are updated."
+python3 -m unittest discover
 
 # Check if Docker is available
 if command -v docker &> /dev/null; then
     echo "Docker is available. Running Docker build tests..."
-    
-    # Build the Docker image but don't fail if it doesn't build (temporary)
-    docker build -t fogis-api-client-test -f Dockerfile.test . || echo "Note: Docker build failed. This is expected until Docker setup is fixed."
-    
-    echo "Docker tests completed."
+
+    # Build the Docker image
+    docker build -t fogis-api-client-test -f Dockerfile.test .
+
+    # Run the tests in the Docker container and fail if any tests fail
+    echo "Running tests in Docker container..."
+    docker run --rm fogis-api-client-test python -m unittest discover
+
+    echo "Docker tests completed!"
 else
     echo "Docker is not available. Skipping Docker build tests."
 fi
 
-echo "Pre-merge checks completed. You can now create a PR and merge your changes."
-echo "Note: Some tests are currently failing. This is expected and will be fixed in a separate PR."
+echo "All tests passed! You can now create a PR and merge your changes."
