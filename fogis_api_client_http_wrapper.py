@@ -1,7 +1,8 @@
 import os
 import signal
 import sys
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
+
 try:
     from flask_cors import CORS  # Import CORS for development
 except ImportError:
@@ -11,95 +12,72 @@ except ImportError:
 from fogis_api_client.fogis_api_client import FogisApiClient
 
 # Get environment variables
-fogis_username = os.environ.get("FOGIS_USERNAME")
-fogis_password = os.environ.get("FOGIS_PASSWORD")
+fogis_username = os.environ.get("FOGIS_USERNAME", "test_user")
+fogis_password = os.environ.get("FOGIS_PASSWORD", "test_pass")
 debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
 
-# Initialize the Fogis API client
+# Initialize the Fogis API client but don't login yet
+# Login will happen automatically when needed (lazy login)
 client = FogisApiClient(fogis_username, fogis_password)
-client.login()
 
-
-# Import the Fogis API Client functions (for now, dummy functions)
-# In the future, we will import the actual Fogis API Client library
-def fetch_matches_list_from_fogis_api():
-    """
-    Dummy function to simulate fetching matches list from Fogis API Client.
-    Replace with actual Fogis API Client call later.
-    """
-    return [
-        {"match_id": "1", "team1": "Team A", "team2": "Team B", "date": "2024-01-20"},
-        {"match_id": "2", "team1": "Team C", "team2": "Team D", "date": "2024-01-21"}
-    ]
-
-
-def fetch_match_details_from_fogis_api(match_id):
-    """
-    Dummy function to simulate fetching match details from Fogis API Client.
-    Replace with actual Fogis API Client call later.
-    """
-    return {
-        "match_id": match_id,
-        "team1": "Team X",
-        "team2": "Team Y",
-        "date": "2024-01-25",
-        "referees": ["Referee 1", "Assistant Referee 1", "Assistant Referee 2"]
-    }
-
-
+# Initialize the Flask app
 app = Flask(__name__)
-if CORS is not None:
-    CORS(app)  # Enable CORS for development
+if CORS:
+    CORS(app)  # Enable CORS for all routes if available
 
 
-@app.route('/matches')
-def get_matches_list():
-    """
-    API endpoint to return a list of matches.
-    Calls the Fogis API Client (dummy function for now).
-    """
-    matches = client.fetch_matches_list_json()
-    return jsonify(matches)
-
-
-@app.route('/match/<match_id>')
-def get_match_details(match_id):
-    """
-    API endpoint to return details for a specific match.
-    Calls the Fogis API Client (dummy function for now).
-    """
-    match_detail = fetch_match_details_from_fogis_api(match_id)
-    return jsonify(match_detail)
-
-
-@app.route('/hello')
-def hello():
-    return jsonify(client.hello_world())
-
-
-@app.route('/')
+@app.route("/")
 def index():
-    my_list = [{"item": 1}, {"item": 2}, {"unicode_item": "åäö"}]  # List as data
-    return jsonify(my_list, ensure_ascii=False)
+    """
+    Test endpoint to verify the API is running.
+    """
+    return jsonify({"status": "ok", "message": "Fogis API Client HTTP Wrapper"})
 
 
-# Handle signals for graceful shutdown
+@app.route("/hello")
+def hello():
+    """
+    Test endpoint that calls the hello_world method of the Fogis API Client.
+    """
+    return jsonify({"message": client.hello_world()})
+
+
+@app.route("/matches")
+def matches():
+    """
+    Endpoint to fetch matches list from Fogis API Client.
+    """
+    try:
+        matches_list = client.fetch_matches_list_json()
+        return jsonify(matches_list)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/match/<match_id>")
+def match(match_id):
+    """
+    Endpoint to fetch match details from Fogis API Client.
+    """
+    try:
+        match_data = client.fetch_match_json(match_id)
+        return jsonify(match_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 def signal_handler(sig, frame):
-    print('Received shutdown signal, exiting gracefully...')
-    # Perform any cleanup here if needed
+    """
+    Handle SIGTERM and SIGINT signals to gracefully shut down the server.
+    """
+    print("Shutting down...")
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Register signal handlers
-    signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    
-    # Use threaded mode in development for hot reloading
-    if debug_mode:
-        print("Running in DEBUG mode")
-        app.run(host='0.0.0.0', port=8080, debug=True)
-    else:
-        print("Running in PRODUCTION mode")
-        # Use threaded=False to avoid issues with signal handling in production
-        app.run(host='0.0.0.0', port=8080, debug=False, threaded=False)
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # Start the Flask app
+    app.run(host="0.0.0.0", port=8080, debug=debug_mode)
