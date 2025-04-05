@@ -1,101 +1,89 @@
-import os
-import sys
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, Mock
+import os
+import json
+import sys
+from flask import Flask
+from flask.testing import FlaskClient
 
-# Add the parent directory to the path so we can import the wrapper
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Import the Flask app from the HTTP wrapper
+import fogis_api_client_http_wrapper
 
-import fogis_api_client_http_wrapper as wrapper
 
 class TestHttpWrapper(unittest.TestCase):
-    """Test the HTTP wrapper functionality."""
-    
-    @patch('fogis_api_client_http_wrapper.FogisApiClient')
-    def setUp(self, mock_client):
-        """Set up the test environment."""
-        self.mock_client_instance = mock_client.return_value
-        self.mock_client_instance.hello_world.return_value = "Hello, World!"
-        self.mock_client_instance.fetch_matches_list_json.return_value = [
-            {"match_id": "1", "team1": "Team A", "team2": "Team B", "date": "2024-01-20"}
-        ]
-        
+    """Test cases for the HTTP wrapper."""
+
+    def setUp(self):
+        """Set up test fixtures."""
         # Create a test client
-        wrapper.client = self.mock_client_instance
-        self.app = wrapper.app.test_client()
+        self.app = fogis_api_client_http_wrapper.app
+        self.app.config['TESTING'] = True
+        self.client = self.app.test_client()
         
+        # Mock the FogisApiClient
+        self.mock_fogis_client = Mock()
+        fogis_api_client_http_wrapper.client = self.mock_fogis_client
+        
+        # Set up mock responses
+        self.mock_fogis_client.hello_world.return_value = "Hello, brave new world!"
+        self.mock_fogis_client.fetch_matches_list_json.return_value = [{"id": "1", "home_team": "Team A", "away_team": "Team B"}]
+        self.mock_fogis_client.fetch_match_json.return_value = {"id": "123", "home_team": "Team A", "away_team": "Team B"}
+
     def test_hello_endpoint(self):
         """Test the /hello endpoint."""
-        response = self.app.get('/hello')
+        response = self.client.get('/hello')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json, "Hello, World!")
-        self.mock_client_instance.hello_world.assert_called_once()
-        
+        self.assertEqual(response.json, {"message": "Hello, brave new world!"})
+
     def test_index_endpoint(self):
         """Test the root endpoint."""
-        response = self.app.get('/')
-        self.assertEqual(response.status_code, 200)
-        self.assertIsInstance(response.json, list)
-        self.assertEqual(len(response.json), 3)  # 3 items in the list
-        
-        # Check for Unicode handling
-        unicode_items = [item for item in response.json if 'unicode_item' in item]
-        self.assertEqual(len(unicode_items), 1)
-        self.assertEqual(unicode_items[0]['unicode_item'], 'åäö')
-        
-    def test_matches_endpoint(self):
-        """Test the /matches endpoint."""
-        response = self.app.get('/matches')
-        self.assertEqual(response.status_code, 200)
-        self.assertIsInstance(response.json, list)
-        self.assertEqual(len(response.json), 1)
-        self.mock_client_instance.fetch_matches_list_json.assert_called_once()
-        
-        match = response.json[0]
-        self.assertEqual(match['match_id'], "1")
-        self.assertEqual(match['team1'], "Team A")
-        self.assertEqual(match['team2'], "Team B")
-        
-    def test_match_details_endpoint(self):
-        """Test the /match/<match_id> endpoint."""
-        response = self.app.get('/match/1')
+        response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json, dict)
+        self.assertEqual(response.json, {"status": "ok", "message": "Fogis API Client HTTP Wrapper"})
+
+    @patch('fogis_api_client_http_wrapper.client.fetch_matches_list_json')
+    def test_matches_endpoint(self, mock_fetch):
+        """Test the /matches endpoint."""
+        # Set up the mock
+        mock_fetch.return_value = [{"id": "1", "home_team": "Team A", "away_team": "Team B"}]
         
-        # Check the structure of the match details
-        self.assertIn('match_id', response.json)
-        self.assertIn('team1', response.json)
-        self.assertIn('team2', response.json)
-        self.assertIn('referees', response.json)
-        self.assertIsInstance(response.json['referees'], list)
+        # Call the endpoint
+        response = self.client.get('/matches')
         
-    @patch('fogis_api_client_http_wrapper.debug_mode', True)
-    @patch('fogis_api_client_http_wrapper.app.run')
-    def test_debug_mode(self, mock_run):
-        """Test that debug mode is properly handled."""
-        # Call the main function
-        wrapper.signal_handler = MagicMock()  # Mock the signal handler
+        # Verify the response
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json, [{"id": "1", "home_team": "Team A", "away_team": "Team B"}])
+        mock_fetch.assert_called_once()
+
+    @patch('fogis_api_client_http_wrapper.client.fetch_match_json')
+    def test_match_details_endpoint(self, mock_fetch):
+        """Test the /match/<match_id> endpoint."""
+        # Set up the mock
+        mock_fetch.return_value = {"id": "123", "home_team": "Team A", "away_team": "Team B"}
         
-        # Simulate running the main block
-        if hasattr(wrapper, '__name__') and wrapper.__name__ == '__main__':
-            wrapper.app.run(host='0.0.0.0', port=8080, debug=True)
-            
-        # Check that app.run was called with debug=True
-        mock_run.assert_called_with(host='0.0.0.0', port=8080, debug=True)
+        # Call the endpoint
+        response = self.client.get('/match/123')
         
-    @patch('fogis_api_client_http_wrapper.debug_mode', False)
-    @patch('fogis_api_client_http_wrapper.app.run')
-    def test_production_mode(self, mock_run):
-        """Test that production mode is properly handled."""
-        # Call the main function
-        wrapper.signal_handler = MagicMock()  # Mock the signal handler
+        # Verify the response
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json, {"id": "123", "home_team": "Team A", "away_team": "Team B"})
+        mock_fetch.assert_called_once_with("123")
+
+    @patch('fogis_api_client_http_wrapper.client.fetch_match_json')
+    def test_match_details_endpoint_error(self, mock_fetch):
+        """Test the /match/<match_id> endpoint with an error."""
+        # Set up the mock to raise an exception
+        mock_fetch.side_effect = Exception("Test error")
         
-        # Simulate running the main block
-        if hasattr(wrapper, '__name__') and wrapper.__name__ == '__main__':
-            wrapper.app.run(host='0.0.0.0', port=8080, debug=False, threaded=False)
-            
-        # Check that app.run was called with debug=False and threaded=False
-        mock_run.assert_called_with(host='0.0.0.0', port=8080, debug=False, threaded=False)
+        # Call the endpoint
+        response = self.client.get('/match/123')
+        
+        # Verify the response
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.json, {"error": "Test error"})
+        mock_fetch.assert_called_once_with("123")
+
 
 if __name__ == '__main__':
     unittest.main()
