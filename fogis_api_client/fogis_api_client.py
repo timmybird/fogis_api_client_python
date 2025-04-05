@@ -331,3 +331,34 @@ class FogisApiClient:
         else:
             print("No match events found to clear.")
             return False
+    def mark_reporting_finished(self, match_id):
+        """
+        Mark a match report as completed/finished in the FOGIS system.
+        
+        This is the final step in the referee reporting workflow that finalizes 
+        the match report and submits it officially.
+        
+        Args:
+            match_id (str): The ID of the match to mark as finished
+            
+        Returns:
+            dict: The response from the FOGIS API
+            
+        Raises:
+            FogisAPIRequestError: If there's an error with the API request
+            
+        Example:
+            >>> client = FogisApiClient(username, password)
+            >>> client.login()
+            >>> result = client.mark_reporting_finished(match_id="123456")
+            >>> print(f"Report marked as finished: {result['success']}")
+        """
+        # Validate match_id
+        if not match_id:
+            raise ValueError("match_id cannot be empty")
+            
+        payload = {"matchid": match_id}
+        return self._api_request(
+            url=f"{FogisApiClient.BASE_URL}/Fogis/Match/SparaMatchGodkannDomarrapport",
+            payload=payload
+        )
