@@ -8,6 +8,7 @@ from flask.testing import FlaskClient
 
 # Import the Flask app from the HTTP wrapper
 import fogis_api_client_http_wrapper
+from fogis_api_client.fogis_api_client import FogisLoginError, FogisAPIRequestError, FogisDataError
 
 
 class TestHttpWrapper(unittest.TestCase):
@@ -89,12 +90,14 @@ class TestHttpWrapper(unittest.TestCase):
 
         # Verify the response
         self.assertEqual(response.status_code, 500)
-        self.assertEqual(response.json, {"error": "Test error"})
+        self.assertEqual(response.json["error"], "An unexpected error occurred")
+        self.assertEqual(response.json["message"], "Test error")
+        self.assertEqual(response.json["error_type"], "server_error")
         mock_fetch.assert_called_once_with("123")
 
     @patch('fogis_api_client_http_wrapper.client.fetch_matches_list_json')
     def test_matches_endpoint_error(self, mock_fetch):
-        """Test the /matches endpoint with an error."""
+        """Test the /matches endpoint with a generic error."""
         # Set up the mock to raise an exception
         mock_fetch.side_effect = Exception("Test error")
 
@@ -103,7 +106,57 @@ class TestHttpWrapper(unittest.TestCase):
 
         # Verify the response
         self.assertEqual(response.status_code, 500)
-        self.assertEqual(response.json, {"error": "Test error"})
+        self.assertEqual(response.json["error"], "An unexpected error occurred")
+        self.assertEqual(response.json["message"], "Test error")
+        self.assertEqual(response.json["error_type"], "server_error")
+        mock_fetch.assert_called_once()
+
+    @patch('fogis_api_client_http_wrapper.client.fetch_matches_list_json')
+    def test_matches_endpoint_login_error(self, mock_fetch):
+        """Test the /matches endpoint with a login error."""
+        # Set up the mock to raise a login error
+        mock_fetch.side_effect = FogisLoginError("Invalid credentials")
+
+        # Call the endpoint
+        response = self.client.get('/matches')
+
+        # Verify the response
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json["error"], "Authentication failed")
+        self.assertEqual(response.json["message"], "Invalid credentials")
+        self.assertEqual(response.json["error_type"], "authentication_error")
+        mock_fetch.assert_called_once()
+
+    @patch('fogis_api_client_http_wrapper.client.fetch_matches_list_json')
+    def test_matches_endpoint_api_error(self, mock_fetch):
+        """Test the /matches endpoint with an API error."""
+        # Set up the mock to raise an API error
+        mock_fetch.side_effect = FogisAPIRequestError("API connection failed")
+
+        # Call the endpoint
+        response = self.client.get('/matches')
+
+        # Verify the response
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(response.json["error"], "Failed to communicate with FOGIS API")
+        self.assertEqual(response.json["message"], "API connection failed")
+        self.assertEqual(response.json["error_type"], "api_error")
+        mock_fetch.assert_called_once()
+
+    @patch('fogis_api_client_http_wrapper.client.fetch_matches_list_json')
+    def test_matches_endpoint_data_error(self, mock_fetch):
+        """Test the /matches endpoint with a data error."""
+        # Set up the mock to raise a data error
+        mock_fetch.side_effect = FogisDataError("Invalid data format")
+
+        # Call the endpoint
+        response = self.client.get('/matches')
+
+        # Verify the response
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.json["error"], "Invalid data received from FOGIS API")
+        self.assertEqual(response.json["message"], "Invalid data format")
+        self.assertEqual(response.json["error_type"], "data_error")
         mock_fetch.assert_called_once()
 
     def test_invalid_endpoint(self):
@@ -170,7 +223,36 @@ class TestHttpWrapper(unittest.TestCase):
 
         # Verify the response
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json, {"error": "No event data provided"})
+        self.assertEqual(response.json["error"], "No event data provided")
+        self.assertEqual(response.json["error_type"], "validation_error")
+
+    def test_report_match_event_endpoint_missing_type(self):
+        """Test the /match/<match_id>/events POST endpoint with missing event type."""
+        # Call the endpoint with data missing the required 'type' field
+        response = self.client.post('/match/123/events', json={"player": "John Doe"})
+
+        # Verify the response
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json["error"], "Event type is required")
+        self.assertEqual(response.json["error_type"], "validation_error")
+
+    def test_match_endpoint_empty_id(self):
+        """Test the /match/<match_id> endpoint with an empty ID."""
+        # Call the endpoint with an empty match ID
+        response = self.client.get('/match/')
+
+        # Verify the response
+        self.assertEqual(response.status_code, 404)  # Flask returns 404 for missing URL parameters
+
+    def test_filtered_matches_invalid_date_format(self):
+        """Test the /matches/filter endpoint with invalid date format."""
+        # Call the endpoint with invalid date format
+        response = self.client.post('/matches/filter', json={"from_date": "2023/01/01"})
+
+        # Verify the response
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json["error"], "Invalid from_date format. Use YYYY-MM-DD")
+        self.assertEqual(response.json["error_type"], "validation_error")
 
     @patch('fogis_api_client_http_wrapper.client.clear_match_events')
     def test_clear_match_events_endpoint(self, mock_clear):

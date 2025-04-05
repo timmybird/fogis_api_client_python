@@ -119,6 +119,34 @@ The `/matches/filter` endpoint accepts the following parameters in the request b
 - `gender` - Gender for filtering matches
 - `football_type` - Type of football (e.g., "indoor", "outdoor")
 
+#### Error Handling
+
+The HTTP API wrapper provides standardized error responses with appropriate HTTP status codes:
+
+##### Error Response Format
+All error responses follow this JSON format:
+```json
+{
+  "error": "Human-readable error message",
+  "message": "Detailed error information",
+  "error_type": "error_type_code"
+}
+```
+
+##### HTTP Status Codes
+- `400 Bad Request` - Invalid input parameters or validation errors
+- `401 Unauthorized` - Authentication failed
+- `404 Not Found` - Resource not found
+- `500 Internal Server Error` - Unexpected server error
+- `502 Bad Gateway` - Error communicating with the FOGIS API
+
+##### Error Types
+- `validation_error` - Input validation failed (e.g., missing required field)
+- `authentication_error` - Authentication with FOGIS failed
+- `api_error` - Error communicating with the FOGIS API
+- `data_error` - Invalid data received from FOGIS API
+- `server_error` - Unexpected server error
+
 ---
 #### Contributing
 
