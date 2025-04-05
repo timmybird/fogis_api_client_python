@@ -10,6 +10,7 @@ except ImportError:
     CORS = None
 
 from fogis_api_client.fogis_api_client import FogisApiClient
+from fogis_api_client.match_list_filter import MatchListFilter
 
 # Get environment variables
 fogis_username = os.environ.get("FOGIS_USERNAME", "test_user")
@@ -62,6 +63,145 @@ def match(match_id):
     try:
         match_data = client.fetch_match_json(match_id)
         return jsonify(match_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/match/<match_id>/result")
+def match_result(match_id):
+    """
+    Endpoint to fetch result information for a specific match.
+    """
+    try:
+        result_data = client.fetch_match_result_json(match_id)
+        return jsonify(result_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/match/<match_id>/events", methods=["GET"])
+def match_events(match_id):
+    """
+    Endpoint to fetch events for a specific match.
+    """
+    try:
+        # Use the dedicated method for fetching match events
+        events_data = client.fetch_match_events_json(match_id)
+        return jsonify(events_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/match/<match_id>/events", methods=["POST"])
+def report_match_event(match_id):
+    """
+    Endpoint to report a new event for a match.
+    """
+    # Check if JSON data was provided
+    if not request.is_json or not request.json:
+        return jsonify({"error": "No event data provided"}), 400
+
+    try:
+        event_data = request.json
+
+        # Add match_id to the event data if not already present
+        if "matchid" not in event_data:
+            event_data["matchid"] = match_id
+
+        result = client.report_match_event(event_data)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/match/<match_id>/events/clear", methods=["POST"])
+def clear_match_events(match_id):
+    """
+    Endpoint to clear all events for a match.
+    """
+    try:
+        result = client.clear_match_events(match_id)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/match/<match_id>/officials")
+def match_officials(match_id):
+    """
+    Endpoint to fetch officials information for a specific match.
+    """
+    try:
+        officials_data = client.fetch_match_officials_json(match_id)
+        return jsonify(officials_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/team/<team_id>/players")
+def team_players(team_id):
+    """
+    Endpoint to fetch player information for a specific team.
+    """
+    try:
+        players_data = client.fetch_team_players_json(team_id)
+        return jsonify(players_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/team/<team_id>/officials")
+def team_officials(team_id):
+    """
+    Endpoint to fetch officials information for a specific team.
+    """
+    try:
+        officials_data = client.fetch_team_officials_json(team_id)
+        return jsonify(officials_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/match/<match_id>/finish", methods=["POST"])
+def finish_match_report(match_id):
+    """
+    Endpoint to mark a match report as completed/finished.
+    """
+    try:
+        result = client.mark_reporting_finished(match_id)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/matches/filter", methods=["POST"])
+def filtered_matches():
+    """
+    Endpoint to fetch matches with specific filters.
+    """
+    try:
+        filter_data = request.json or {}
+
+        # Create a MatchListFilter with the provided filter data
+        match_filter = MatchListFilter()
+
+        # Apply filter parameters if they exist
+        if "from_date" in filter_data:
+            match_filter.from_date = filter_data["from_date"]
+        if "to_date" in filter_data:
+            match_filter.to_date = filter_data["to_date"]
+        if "status" in filter_data:
+            match_filter.status = filter_data["status"]
+        if "age_category" in filter_data:
+            match_filter.age_category = filter_data["age_category"]
+        if "gender" in filter_data:
+            match_filter.gender = filter_data["gender"]
+        if "football_type" in filter_data:
+            match_filter.football_type = filter_data["football_type"]
+
+        # Fetch filtered matches
+        matches_list = match_filter.fetch_filtered_matches(client)
+        return jsonify(matches_list)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
