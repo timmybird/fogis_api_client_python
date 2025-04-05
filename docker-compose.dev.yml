@@ -24,7 +24,7 @@ services:
       - FLASK_DEBUG=1
       - TZ=Europe/Stockholm
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/" || exit 0]
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 0"]
       interval: 5s
       timeout: 10s
       retries: 5
