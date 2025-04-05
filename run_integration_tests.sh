@@ -3,6 +3,10 @@
 # Create necessary directories if they don't exist
 mkdir -p test-results
 
+# Create Docker network if it doesn't exist
+echo "Creating Docker network if it doesn't exist..."
+docker network create fogis-network 2>/dev/null || true
+
 # Start the development environment if it's not already running
 if ! docker ps | grep -q fogis-api-client-dev; then
     echo "Starting development environment..."
