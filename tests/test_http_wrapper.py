@@ -264,6 +264,5 @@ class TestHttpWrapper(unittest.TestCase):
         self.assertEqual(mock_filter_instance.status, "upcoming")
         mock_filter_instance.fetch_filtered_matches.assert_called_once_with(fogis_api_client_http_wrapper.client)
 
-
 if __name__ == '__main__':
     unittest.main()
