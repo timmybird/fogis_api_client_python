@@ -1,0 +1,26 @@
+# Use a slim Python base image
+FROM python:3.9-slim-buster
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Install development dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first to leverage Docker cache
+COPY requirements.txt .
+COPY setup.py .
+COPY pyproject.toml .
+
+# Install dependencies
+RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir flask-cors pytest pytest-flask watchdog
+
+# Copy the HTTP API wrapper script
+COPY fogis_api_client_http_wrapper.py .
+
+# Command to run when the container starts - the Flask API wrapper with auto-reload
+CMD ["python", "fogis_api_client_http_wrapper.py"]
