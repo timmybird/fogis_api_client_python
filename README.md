@@ -85,6 +85,30 @@ For development, we provide a more comprehensive setup:
 For more details on the development environment, see [README.dev.md](README.dev.md).
 
 ---
+#### API Documentation
+
+The HTTP API wrapper includes OpenAPI/Swagger documentation that provides detailed information about all endpoints, parameters, request bodies, and responses.
+
+##### Accessing the Documentation
+
+When the HTTP wrapper is running, you can access the Swagger UI at:
+
+```
+http://localhost:5000/api/docs
+```
+
+The Swagger UI provides an interactive interface where you can:
+- Browse all available endpoints
+- See detailed parameter information
+- Try out API calls directly from the browser
+- View response schemas and examples
+
+The raw OpenAPI specification is available at:
+
+```
+http://localhost:5000/api/swagger.json
+```
+
 #### API Endpoints
 
 The HTTP API wrapper provides the following endpoints:

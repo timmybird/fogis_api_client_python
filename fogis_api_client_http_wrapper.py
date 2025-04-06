@@ -1,6 +1,7 @@
 import os
 import signal
 import sys
+import logging
 from flask import Flask, jsonify, request
 
 try:
@@ -11,6 +12,7 @@ except ImportError:
 
 from fogis_api_client.fogis_api_client import FogisApiClient
 from fogis_api_client.match_list_filter import MatchListFilter
+from fogis_api_client_swagger import get_swagger_blueprint, spec
 
 # Get environment variables
 fogis_username = os.environ.get("FOGIS_USERNAME", "test_user")
@@ -21,10 +23,29 @@ debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
 # Login will happen automatically when needed (lazy login)
 client = FogisApiClient(fogis_username, fogis_password)
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
 # Initialize the Flask app
 app = Flask(__name__)
 if CORS:
     CORS(app)  # Enable CORS for all routes if available
+
+# Register Swagger UI blueprint
+swagger_ui_blueprint, SWAGGER_URL, API_URL = get_swagger_blueprint()
+app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
+
+# Add endpoint to serve the OpenAPI specification
+@app.route('/api/swagger.json')
+def get_swagger():
+    return jsonify(spec.to_dict())
 
 
 @app.route("/")
