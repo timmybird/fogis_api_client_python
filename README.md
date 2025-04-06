@@ -85,9 +85,13 @@ For development, we provide a more comprehensive setup:
 For more details on the development environment, see [README.dev.md](README.dev.md).
 
 ---
+### FOGIS API Gateway
+
+The package includes a REST API gateway that allows you to access the FOGIS API via HTTP requests. This is useful if you want to use the API from a language other than Python or if you need to integrate with web applications.
+
 #### API Endpoints
 
-The HTTP API wrapper provides the following endpoints:
+The FOGIS API Gateway provides the following endpoints:
 
 ##### Basic Endpoints
 - `GET /` - Returns a test JSON response
@@ -118,6 +122,30 @@ The `/matches/filter` endpoint accepts the following parameters in the request b
 - `age_category` - Age category for filtering matches
 - `gender` - Gender for filtering matches
 - `football_type` - Type of football (e.g., "indoor", "outdoor")
+
+#### API Documentation
+
+The FOGIS API Gateway includes OpenAPI/Swagger documentation that provides detailed information about all endpoints, parameters, request bodies, and responses.
+
+##### Accessing the Documentation
+
+When the API Gateway is running, you can access the Swagger UI at:
+
+```
+http://localhost:5000/api/docs
+```
+
+The Swagger UI provides an interactive interface where you can:
+- Browse all available endpoints
+- See detailed parameter information
+- Try out API calls directly from the browser
+- View response schemas and examples
+
+The raw OpenAPI specification is available at:
+
+```
+http://localhost:5000/api/swagger.json
+```
 
 ---
 #### Contributing
