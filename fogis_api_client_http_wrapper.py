@@ -47,9 +47,53 @@ def hello():
 def matches():
     """
     Endpoint to fetch matches list from Fogis API Client.
+
+    Query Parameters:
+    - from_date (str): Start date for filtering matches (format: YYYY-MM-DD)
+    - to_date (str): End date for filtering matches (format: YYYY-MM-DD)
+    - limit (int): Maximum number of matches to return (default: all)
+    - offset (int): Number of matches to skip (for pagination, default: 0)
+    - sort_by (str): Field to sort by (default: date)
+    - order (str): Sort order, 'asc' or 'desc' (default: asc)
     """
     try:
-        matches_list = client.fetch_matches_list_json()
+        # Parse query parameters
+        from_date = request.args.get('from_date')
+        to_date = request.args.get('to_date')
+        limit = request.args.get('limit')
+        offset = request.args.get('offset', 0, type=int)
+        sort_by = request.args.get('sort_by', 'datum')
+        order = request.args.get('order', 'asc')
+
+        # Create filter for server-side filtering
+        filter_data = {}
+        if from_date:
+            filter_data['datumFran'] = from_date
+        if to_date:
+            filter_data['datumTill'] = to_date
+
+        # Fetch matches with server-side filtering
+        matches_list = client.fetch_matches_list_json(filter=filter_data)
+
+        # Apply client-side sorting
+        if sort_by and sort_by in ['datum', 'hemmalag', 'bortalag', 'tavling']:
+            reverse = order.lower() == 'desc'
+            matches_list = sorted(
+                matches_list,
+                key=lambda x: x.get(sort_by, ''),
+                reverse=reverse
+            )
+
+        # Apply client-side pagination
+        if limit:
+            try:
+                limit = int(limit)
+                matches_list = matches_list[offset:offset+limit]
+            except ValueError:
+                pass  # Ignore invalid limit values
+        elif offset > 0:
+            matches_list = matches_list[offset:]
+
         return jsonify(matches_list)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -59,9 +103,42 @@ def matches():
 def match(match_id):
     """
     Endpoint to fetch match details from Fogis API Client.
+
+    Query Parameters:
+    - include_events (bool): Whether to include events in the response (default: true)
+    - include_players (bool): Whether to include players in the response (default: false)
+    - include_officials (bool): Whether to include officials in the response (default: false)
     """
     try:
+        # Parse query parameters
+        include_events = request.args.get('include_events', 'true').lower() == 'true'
+        include_players = request.args.get('include_players', 'false').lower() == 'true'
+        include_officials = request.args.get('include_officials', 'false').lower() == 'true'
+
+        # Fetch basic match data
         match_data = client.fetch_match_json(match_id)
+
+        # Fetch additional data based on query parameters
+        if include_players:
+            try:
+                players_data = client.fetch_match_players_json(match_id)
+                match_data['players'] = players_data
+            except Exception as e:
+                # Don't fail the whole request if just this part fails
+                match_data['players'] = {'error': str(e)}
+
+        if include_officials:
+            try:
+                officials_data = client.fetch_match_officials_json(match_id)
+                match_data['officials'] = officials_data
+            except Exception as e:
+                # Don't fail the whole request if just this part fails
+                match_data['officials'] = {'error': str(e)}
+
+        # If include_events is false, remove events from the response
+        if not include_events and 'events' in match_data:
+            del match_data['events']
+
         return jsonify(match_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -83,10 +160,56 @@ def match_result(match_id):
 def match_events(match_id):
     """
     Endpoint to fetch events for a specific match.
+
+    Query Parameters:
+    - type (str): Filter events by type (e.g., 'goal', 'card', 'substitution')
+    - player (str): Filter events by player name
+    - team (str): Filter events by team name
+    - limit (int): Maximum number of events to return (default: all)
+    - offset (int): Number of events to skip (for pagination, default: 0)
+    - sort_by (str): Field to sort by (default: time)
+    - order (str): Sort order, 'asc' or 'desc' (default: asc)
     """
     try:
+        # Parse query parameters
+        event_type = request.args.get('type')
+        player = request.args.get('player')
+        team = request.args.get('team')
+        limit = request.args.get('limit')
+        offset = request.args.get('offset', 0, type=int)
+        sort_by = request.args.get('sort_by', 'time')
+        order = request.args.get('order', 'asc')
+
         # Use the dedicated method for fetching match events
         events_data = client.fetch_match_events_json(match_id)
+
+        # Apply client-side filtering
+        if event_type:
+            events_data = [e for e in events_data if e.get('type', '').lower() == event_type.lower()]
+        if player:
+            events_data = [e for e in events_data if player.lower() in e.get('player', '').lower()]
+        if team:
+            events_data = [e for e in events_data if team.lower() in e.get('team', '').lower()]
+
+        # Apply client-side sorting
+        if sort_by and sort_by in ['time', 'type', 'player', 'team']:
+            reverse = order.lower() == 'desc'
+            events_data = sorted(
+                events_data,
+                key=lambda x: x.get(sort_by, ''),
+                reverse=reverse
+            )
+
+        # Apply client-side pagination
+        if limit:
+            try:
+                limit = int(limit)
+                events_data = events_data[offset:offset+limit]
+            except ValueError:
+                pass  # Ignore invalid limit values
+        elif offset > 0:
+            events_data = events_data[offset:]
+
         return jsonify(events_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -142,9 +265,56 @@ def match_officials(match_id):
 def team_players(team_id):
     """
     Endpoint to fetch player information for a specific team.
+
+    Query Parameters:
+    - name (str): Filter players by name
+    - position (str): Filter players by position
+    - number (str): Filter players by jersey number
+    - limit (int): Maximum number of players to return (default: all)
+    - offset (int): Number of players to skip (for pagination, default: 0)
+    - sort_by (str): Field to sort by (default: name)
+    - order (str): Sort order, 'asc' or 'desc' (default: asc)
     """
     try:
+        # Parse query parameters
+        name = request.args.get('name')
+        position = request.args.get('position')
+        number = request.args.get('number')
+        limit = request.args.get('limit')
+        offset = request.args.get('offset', 0, type=int)
+        sort_by = request.args.get('sort_by', 'name')
+        order = request.args.get('order', 'asc')
+
+        # Fetch players data
         players_data = client.fetch_team_players_json(team_id)
+
+        # Apply client-side filtering
+        if name:
+            players_data = [p for p in players_data if name.lower() in p.get('name', '').lower()]
+        if position:
+            players_data = [p for p in players_data if position.lower() in p.get('position', '').lower()]
+        if number:
+            players_data = [p for p in players_data if p.get('number') == number]
+
+        # Apply client-side sorting
+        if sort_by and sort_by in ['name', 'position', 'number']:
+            reverse = order.lower() == 'desc'
+            players_data = sorted(
+                players_data,
+                key=lambda x: x.get(sort_by, ''),
+                reverse=reverse
+            )
+
+        # Apply client-side pagination
+        if limit:
+            try:
+                limit = int(limit)
+                players_data = players_data[offset:offset+limit]
+            except ValueError:
+                pass  # Ignore invalid limit values
+        elif offset > 0:
+            players_data = players_data[offset:]
+
         return jsonify(players_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -154,9 +324,52 @@ def team_players(team_id):
 def team_officials(team_id):
     """
     Endpoint to fetch officials information for a specific team.
+
+    Query Parameters:
+    - name (str): Filter officials by name
+    - role (str): Filter officials by role
+    - limit (int): Maximum number of officials to return (default: all)
+    - offset (int): Number of officials to skip (for pagination, default: 0)
+    - sort_by (str): Field to sort by (default: name)
+    - order (str): Sort order, 'asc' or 'desc' (default: asc)
     """
     try:
+        # Parse query parameters
+        name = request.args.get('name')
+        role = request.args.get('role')
+        limit = request.args.get('limit')
+        offset = request.args.get('offset', 0, type=int)
+        sort_by = request.args.get('sort_by', 'name')
+        order = request.args.get('order', 'asc')
+
+        # Fetch officials data
         officials_data = client.fetch_team_officials_json(team_id)
+
+        # Apply client-side filtering
+        if name:
+            officials_data = [o for o in officials_data if name.lower() in o.get('name', '').lower()]
+        if role:
+            officials_data = [o for o in officials_data if role.lower() in o.get('role', '').lower()]
+
+        # Apply client-side sorting
+        if sort_by and sort_by in ['name', 'role']:
+            reverse = order.lower() == 'desc'
+            officials_data = sorted(
+                officials_data,
+                key=lambda x: x.get(sort_by, ''),
+                reverse=reverse
+            )
+
+        # Apply client-side pagination
+        if limit:
+            try:
+                limit = int(limit)
+                officials_data = officials_data[offset:offset+limit]
+            except ValueError:
+                pass  # Ignore invalid limit values
+        elif offset > 0:
+            officials_data = officials_data[offset:]
+
         return jsonify(officials_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
