@@ -31,10 +31,14 @@ jobs:
       - name: Create test environment
         run: |
           mkdir -p data logs test-results
-          echo "FOGIS_USERNAME=test_user" > .env.dev
-          echo "FOGIS_PASSWORD=test_password" >> .env.dev
-          echo "FLASK_ENV=development" >> .env.dev
-          echo "FLASK_DEBUG=1" >> .env.dev
+          # Create both .env and .env.dev files for compatibility
+          echo "FOGIS_USERNAME=test_user" > .env
+          echo "FOGIS_PASSWORD=test_password" >> .env
+          echo "FLASK_ENV=development" >> .env
+          echo "FLASK_DEBUG=1" >> .env
+
+          # Copy to .env.dev as well
+          cp .env .env.dev
 
           # Create the Docker network
           docker network create fogis-network || true
