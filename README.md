@@ -110,7 +110,50 @@ The HTTP API wrapper provides the following endpoints:
 - `GET /team/<team_id>/players` - Returns player information for a specific team
 - `GET /team/<team_id>/officials` - Returns officials information for a specific team
 
-##### Filter Parameters
+#### Query Parameters
+
+Many endpoints support query parameters for filtering, sorting, and pagination:
+
+##### `/matches` Endpoint
+- `from_date` - Start date for filtering matches (format: YYYY-MM-DD)
+- `to_date` - End date for filtering matches (format: YYYY-MM-DD)
+- `limit` - Maximum number of matches to return
+- `offset` - Number of matches to skip (for pagination)
+- `sort_by` - Field to sort by (options: datum, hemmalag, bortalag, tavling)
+- `order` - Sort order, 'asc' or 'desc'
+
+##### `/match/<match_id>` Endpoint
+- `include_events` - Whether to include events in the response (default: true)
+- `include_players` - Whether to include players in the response (default: false)
+- `include_officials` - Whether to include officials in the response (default: false)
+
+##### `/match/<match_id>/events` Endpoint
+- `type` - Filter events by type (e.g., 'goal', 'card', 'substitution')
+- `player` - Filter events by player name
+- `team` - Filter events by team name
+- `limit` - Maximum number of events to return
+- `offset` - Number of events to skip (for pagination)
+- `sort_by` - Field to sort by (options: time, type, player, team)
+- `order` - Sort order, 'asc' or 'desc'
+
+##### `/team/<team_id>/players` Endpoint
+- `name` - Filter players by name
+- `position` - Filter players by position
+- `number` - Filter players by jersey number
+- `limit` - Maximum number of players to return
+- `offset` - Number of players to skip (for pagination)
+- `sort_by` - Field to sort by (options: name, position, number)
+- `order` - Sort order, 'asc' or 'desc'
+
+##### `/team/<team_id>/officials` Endpoint
+- `name` - Filter officials by name
+- `role` - Filter officials by role
+- `limit` - Maximum number of officials to return
+- `offset` - Number of officials to skip (for pagination)
+- `sort_by` - Field to sort by (options: name, role)
+- `order` - Sort order, 'asc' or 'desc'
+
+##### Filter Parameters for `/matches/filter` Endpoint
 The `/matches/filter` endpoint accepts the following parameters in the request body (JSON):
 - `from_date` - Start date for filtering matches (format: YYYY-MM-DD)
 - `to_date` - End date for filtering matches (format: YYYY-MM-DD)

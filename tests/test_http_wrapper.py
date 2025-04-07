@@ -64,19 +64,86 @@ class TestHttpWrapper(unittest.TestCase):
         self.assertEqual(response.json, [{"id": "1", "home_team": "Team A", "away_team": "Team B"}])
         mock_fetch.assert_called_once()
 
+    @patch('fogis_api_client_http_wrapper.client.fetch_matches_list_json')
+    def test_matches_endpoint_with_query_params(self, mock_fetch):
+        """Test the /matches endpoint with query parameters."""
+        # Set up the mock
+        mock_fetch.return_value = [{"id": "1", "home_team": "Team A", "away_team": "Team B", "datum": "2023-01-01"}]
+
+        # Test with date range parameters
+        response = self.client.get('/matches?from_date=2023-01-01&to_date=2023-12-31')
+        self.assertEqual(response.status_code, 200)
+        mock_fetch.assert_called_with(filter={'datumFran': '2023-01-01', 'datumTill': '2023-12-31'})
+
+        # Reset mock for next test
+        mock_fetch.reset_mock()
+
+        # Test with pagination parameters
+        response = self.client.get('/matches?limit=10&offset=5')
+        self.assertEqual(response.status_code, 200)
+        mock_fetch.assert_called_with(filter={})
+
+        # Reset mock for next test
+        mock_fetch.reset_mock()
+
+        # Test with sorting parameters
+        response = self.client.get('/matches?sort_by=datum&order=desc')
+        self.assertEqual(response.status_code, 200)
+        mock_fetch.assert_called_with(filter={})
+
     @patch('fogis_api_client_http_wrapper.client.fetch_match_json')
     def test_match_details_endpoint(self, mock_fetch):
         """Test the /match/<match_id> endpoint."""
         # Set up the mock
-        mock_fetch.return_value = {"id": "123", "home_team": "Team A", "away_team": "Team B"}
+        mock_fetch.return_value = {"id": "123", "home_team": "Team A", "away_team": "Team B", "events": [{"id": "1", "type": "goal"}]}
 
         # Call the endpoint
         response = self.client.get('/match/123')
 
         # Verify the response
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json, {"id": "123", "home_team": "Team A", "away_team": "Team B"})
+        self.assertEqual(response.json, {"id": "123", "home_team": "Team A", "away_team": "Team B", "events": [{"id": "1", "type": "goal"}]})
         mock_fetch.assert_called_once_with("123")
+
+    @patch('fogis_api_client_http_wrapper.client.fetch_match_json')
+    @patch('fogis_api_client_http_wrapper.client.fetch_match_players_json')
+    @patch('fogis_api_client_http_wrapper.client.fetch_match_officials_json')
+    def test_match_details_endpoint_with_query_params(self, mock_officials, mock_players, mock_match):
+        """Test the /match/<match_id> endpoint with query parameters."""
+        # Set up the mocks
+        mock_match.return_value = {"id": "123", "home_team": "Team A", "away_team": "Team B", "events": [{"id": "1", "type": "goal"}]}
+        mock_players.return_value = [{"id": "1", "name": "John Doe"}]
+        mock_officials.return_value = [{"id": "1", "name": "Jane Smith", "role": "Referee"}]
+
+        # Test with include_events=false
+        response = self.client.get('/match/123?include_events=false')
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('events', response.json)
+        mock_match.assert_called_with("123")
+
+        # Reset mocks for next test
+        mock_match.reset_mock()
+        mock_players.reset_mock()
+        mock_officials.reset_mock()
+
+        # Test with include_players=true
+        response = self.client.get('/match/123?include_players=true')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('players', response.json)
+        mock_match.assert_called_with("123")
+        mock_players.assert_called_with("123")
+
+        # Reset mocks for next test
+        mock_match.reset_mock()
+        mock_players.reset_mock()
+        mock_officials.reset_mock()
+
+        # Test with include_officials=true
+        response = self.client.get('/match/123?include_officials=true')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('officials', response.json)
+        mock_match.assert_called_with("123")
+        mock_officials.assert_called_with("123")
 
     @patch('fogis_api_client_http_wrapper.client.fetch_match_json')
     def test_match_details_endpoint_error(self, mock_fetch):
@@ -135,15 +202,73 @@ class TestHttpWrapper(unittest.TestCase):
     def test_match_events_endpoint(self, mock_fetch):
         """Test the /match/<match_id>/events GET endpoint."""
         # Set up the mock
-        mock_fetch.return_value = [{"id": "1", "type": "goal", "player": "John Doe"}]
+        mock_fetch.return_value = [{"id": "1", "type": "goal", "player": "John Doe", "team": "Team A", "time": "45:00"}]
 
         # Call the endpoint
         response = self.client.get('/match/123/events')
 
         # Verify the response
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json, [{"id": "1", "type": "goal", "player": "John Doe"}])
+        self.assertEqual(response.json, [{"id": "1", "type": "goal", "player": "John Doe", "team": "Team A", "time": "45:00"}])
         mock_fetch.assert_called_once_with("123")
+
+    @patch('fogis_api_client_http_wrapper.client.fetch_match_events_json')
+    def test_match_events_endpoint_with_query_params(self, mock_fetch):
+        """Test the /match/<match_id>/events GET endpoint with query parameters."""
+        # Set up the mock
+        mock_fetch.return_value = [
+            {"id": "1", "type": "goal", "player": "John Doe", "team": "Team A", "time": "45:00"},
+            {"id": "2", "type": "card", "player": "Jane Smith", "team": "Team B", "time": "60:00"},
+            {"id": "3", "type": "substitution", "player": "Bob Johnson", "team": "Team A", "time": "75:00"}
+        ]
+
+        # Test with type filter
+        response = self.client.get('/match/123/events?type=goal')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json), 1)
+        self.assertEqual(response.json[0]["type"], "goal")
+        mock_fetch.assert_called_with("123")
+
+        # Reset mock for next test
+        mock_fetch.reset_mock()
+
+        # Test with player filter
+        response = self.client.get('/match/123/events?player=Jane')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json), 1)
+        self.assertEqual(response.json[0]["player"], "Jane Smith")
+        mock_fetch.assert_called_with("123")
+
+        # Reset mock for next test
+        mock_fetch.reset_mock()
+
+        # Test with team filter
+        response = self.client.get('/match/123/events?team=Team A')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json), 2)
+        self.assertEqual(response.json[0]["team"], "Team A")
+        self.assertEqual(response.json[1]["team"], "Team A")
+        mock_fetch.assert_called_with("123")
+
+        # Reset mock for next test
+        mock_fetch.reset_mock()
+
+        # Test with pagination
+        response = self.client.get('/match/123/events?limit=1&offset=1')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json), 1)
+        self.assertEqual(response.json[0]["id"], "2")
+        mock_fetch.assert_called_with("123")
+
+        # Reset mock for next test
+        mock_fetch.reset_mock()
+
+        # Test with sorting
+        response = self.client.get('/match/123/events?sort_by=time&order=desc')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json), 3)
+        self.assertEqual(response.json[0]["time"], "75:00")
+        mock_fetch.assert_called_with("123")
 
     @patch('fogis_api_client_http_wrapper.client.report_match_event')
     def test_report_match_event_endpoint(self, mock_report):
