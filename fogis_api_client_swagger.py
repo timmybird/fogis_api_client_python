@@ -10,13 +10,13 @@ from marshmallow import Schema, fields
 
 # Create an APISpec
 spec = APISpec(
-    title="FOGIS API Client",
+    title="FOGIS API Gateway",
     version="1.0.0",
     openapi_version="3.0.2",
     info=dict(
-        description="HTTP API wrapper for the FOGIS API Client",
+        description="HTTP API Gateway for the FOGIS API Client",
         contact=dict(
-            name="FOGIS API Client",
+            name="FOGIS API Gateway",
             url="https://github.com/timmybird/fogis_api_client_python",
         ),
     ),

@@ -12,7 +12,7 @@ except ImportError:
 
 from fogis_api_client.fogis_api_client import FogisApiClient
 from fogis_api_client.match_list_filter import MatchListFilter
-from fogis_api_swagger import get_swagger_blueprint, spec
+from fogis_api_client_swagger import get_swagger_blueprint, spec
 
 # Get environment variables
 fogis_username = os.environ.get("FOGIS_USERNAME", "test_user")

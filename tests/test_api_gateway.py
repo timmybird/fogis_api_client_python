@@ -10,7 +10,7 @@ from flask.testing import FlaskClient
 
 # Import the Flask app from the API gateway
 import fogis_api_gateway
-from fogis_api_swagger import spec
+from fogis_api_client_swagger import spec
 
 
 class TestApiGateway(unittest.TestCase):
@@ -22,11 +22,11 @@ class TestApiGateway(unittest.TestCase):
         self.app = fogis_api_gateway.app
         self.app.config['TESTING'] = True
         self.client = self.app.test_client()
-        
+
         # Set up mock for the Fogis API client
         self.mock_fogis_client = MagicMock()
         fogis_api_gateway.client = self.mock_fogis_client
-        
+
         # Set up mock responses
         self.mock_fogis_client.hello_world.return_value = "Hello, brave new world!"
         self.mock_fogis_client.fetch_matches_list_json.return_value = [{"id": "1", "home_team": "Team A", "away_team": "Team B"}]
@@ -55,31 +55,31 @@ class TestApiGateway(unittest.TestCase):
         # Verify the response
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json, dict)
-        
+
         # Check that the OpenAPI version is correct
         self.assertEqual(response.json['openapi'], '3.0.2')
-        
+
         # Check that the title is correct
         self.assertEqual(response.json['info']['title'], 'FOGIS API Gateway')
-        
+
         # Check that the paths are defined
         self.assertIn('paths', response.json)
         self.assertIsInstance(response.json['paths'], dict)
-        
+
         # Check that the components are defined
         self.assertIn('components', response.json)
         self.assertIn('schemas', response.json['components'])
-        
+
         # Check that all required schemas are defined
         required_schemas = ['Error', 'Match', 'MatchResult', 'Event', 'Player', 'Official']
         for schema in required_schemas:
             self.assertIn(schema, response.json['components']['schemas'])
-            
+
         # Check that all endpoints are documented
-        required_paths = ['/', '/hello', '/matches', '/matches/filter', '/match/{match_id}', 
-                         '/match/{match_id}/result', '/match/{match_id}/events', 
+        required_paths = ['/', '/hello', '/matches', '/matches/filter', '/match/{match_id}',
+                         '/match/{match_id}/result', '/match/{match_id}/events',
                          '/match/{match_id}/events/clear', '/match/{match_id}/officials',
-                         '/match/{match_id}/finish', '/team/{team_id}/players', 
+                         '/match/{match_id}/finish', '/team/{team_id}/players',
                          '/team/{team_id}/officials']
         for path in required_paths:
             self.assertIn(path, response.json['paths'])
