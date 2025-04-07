@@ -23,6 +23,9 @@ setuptools.setup(
         "requests",
         "beautifulsoup4",
         "flask",
+        "apispec>=6.0.0",
+        "flask-swagger-ui",
+        "marshmallow",
     ],
     extras_require={
         'dev': [
@@ -31,6 +34,9 @@ setuptools.setup(
             'pytest-cov',
             'flake8',
             'docker',
+            'apispec>=6.0.0',
+            'flask-swagger-ui',
+            'marshmallow',
         ],
     },
     include_package_data=True,
