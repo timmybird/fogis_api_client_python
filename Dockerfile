@@ -15,7 +15,7 @@ COPY fogis_api_gateway.py .
 COPY fogis_api_swagger.py .
 
 # Install additional dependencies for the API Gateway
-RUN pip install --no-cache-dir flask-swagger-ui apispec marshmallow
+RUN pip install --no-cache-dir flask-swagger-ui apispec>=6.0.0 marshmallow
 
 # Install test dependencies
 RUN pip install --no-cache-dir pytest pytest-flask docker
