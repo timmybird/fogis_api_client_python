@@ -31,7 +31,7 @@ services:
       start_period: 10s
     init: true
     restart: unless-stopped
-    command: ["python", "fogis_api_client_http_wrapper.py"]
+    command: ["python", "fogis_api_gateway.py"]
 
   integration-tests:
     build:
