@@ -26,7 +26,7 @@ def test_root_endpoint():
     assert "status" in data
     assert data["status"] == "ok"
     assert "message" in data
-    assert "Fogis API Client HTTP Wrapper" in data["message"]
+    assert "FOGIS API Gateway" in data["message"]
 
 def test_matches_endpoint():
     """Test the /matches endpoint returns a list of matches."""
