@@ -17,6 +17,9 @@ COPY fogis_api_swagger.py .
 # Install additional dependencies for the API Gateway
 RUN pip install --no-cache-dir flask-swagger-ui apispec marshmallow
 
+# Install test dependencies
+RUN pip install --no-cache-dir pytest pytest-flask docker
+
 # Define environment variables (Username and Password) - placeholders (you can keep or remove these, they are set in docker run anyway)
 # ENV FOGIS_USERNAME=your_fogis_username_placeholder
 # ENV FOGIS_PASSWORD=your_fogis_password_placeholder
