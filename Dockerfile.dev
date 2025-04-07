@@ -15,7 +15,7 @@ COPY . .
 
 # Install dependencies
 RUN pip install --no-cache-dir -e .
-RUN pip install --no-cache-dir flask-cors pytest pytest-flask watchdog
+RUN pip install --no-cache-dir flask-cors pytest pytest-flask watchdog flask-swagger-ui apispec marshmallow
 
 # Command to run when the container starts - the FOGIS API Gateway with auto-reload
 CMD ["python", "fogis_api_gateway.py"]
