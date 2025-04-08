@@ -7,11 +7,29 @@ mkdir -p test-results
 if ! docker ps | grep -q fogis-api-client-dev; then
     echo "Starting development environment..."
     docker compose -f docker-compose.dev.yml up -d fogis-api-client
-    
-    # Wait for the service to be healthy
+
+    # Wait for the service to be healthy with a timeout
     echo "Waiting for API service to be healthy..."
+    TIMEOUT=300  # 5 minutes timeout
+    START_TIME=$(date +%s)
+
     while ! docker ps | grep -q "fogis-api-client-dev.*healthy"; do
-        sleep 2
+        CURRENT_TIME=$(date +%s)
+        ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+
+        if [ $ELAPSED_TIME -gt $TIMEOUT ]; then
+            echo "Timeout waiting for API service to become healthy after $TIMEOUT seconds."
+            echo "Checking container logs for errors:"
+            docker logs fogis-api-client-dev
+            echo "Container status:"
+            docker ps | grep fogis-api-client-dev
+
+            # Try to continue anyway, the tests will fail if the service is not working
+            break
+        fi
+
+        echo "Still waiting... ($ELAPSED_TIME seconds elapsed)"
+        sleep 5
     done
 fi
 

@@ -8,6 +8,16 @@ import time
 # When running in Docker, this should be set to http://fogis-api-client-dev:8080
 API_URL = os.environ.get('API_URL', 'http://localhost:8080')
 
+def test_health_endpoint():
+    """Test the /health endpoint returns a valid response."""
+    response = requests.get(f"{API_URL}/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, dict)
+    assert "status" in data
+    assert data["status"] == "healthy"
+    assert "timestamp" in data
+
 def test_hello_endpoint():
     """Test the /hello endpoint returns a valid response."""
     response = requests.get(f"{API_URL}/hello")

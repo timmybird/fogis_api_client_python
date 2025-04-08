@@ -22,11 +22,11 @@ services:
       - FLASK_DEBUG=1
       - TZ=Europe/Stockholm
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/hello"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
       timeout: 5s
-      retries: 3
-      start_period: 10s
+      retries: 5
+      start_period: 30s
     init: true
     restart: unless-stopped
     command: ["python", "fogis_api_gateway.py"]

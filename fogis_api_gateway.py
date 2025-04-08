@@ -56,6 +56,15 @@ def index():
     return jsonify({"status": "ok", "message": "FOGIS API Gateway"})
 
 
+@app.route("/health")
+def health():
+    """
+    Health check endpoint for Docker and monitoring systems.
+    This endpoint is intentionally simple and doesn't depend on external services.
+    """
+    return jsonify({"status": "healthy", "timestamp": str(datetime.now())})
+
+
 @app.route("/hello")
 def hello():
     """
