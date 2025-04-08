@@ -235,7 +235,7 @@ def team_players(team_id):
     Endpoint to fetch player information for a specific team.
     """
     try:
-        players_data = client.fetch_team_players_json(team_id)
+        players_data = client.fetch_team_players_json(int(team_id))
         return jsonify(players_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -247,7 +247,7 @@ def team_officials(team_id):
     Endpoint to fetch officials information for a specific team.
     """
     try:
-        officials_data = client.fetch_team_officials_json(team_id)
+        officials_data = client.fetch_team_officials_json(int(team_id))
         return jsonify(officials_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

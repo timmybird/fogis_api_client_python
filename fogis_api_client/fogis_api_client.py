@@ -216,12 +216,12 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def fetch_team_players_json(self, team_id):
+    def fetch_team_players_json(self, team_id: int):
         """
         Fetches player information for a specific team.
 
         Args:
-            team_id (str): The ID of the team
+            team_id (int): The ID of the team
 
         Returns:
             dict: Player information for the team
@@ -231,16 +231,16 @@ class FogisApiClient:
             FogisAPIRequestError: If there's an error with the API request
         """
         url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaLagSpelare"
-        payload = {"lagid": team_id}
+        payload = {"lagid": int(team_id)}
 
         return self._api_request(url, payload)
 
-    def fetch_team_officials_json(self, team_id):
+    def fetch_team_officials_json(self, team_id: int):
         """
         Fetches officials information for a specific team.
 
         Args:
-            team_id (str): The ID of the team
+            team_id (int): The ID of the team
 
         Returns:
             dict: Officials information for the team
@@ -250,7 +250,7 @@ class FogisApiClient:
             FogisAPIRequestError: If there's an error with the API request
         """
         url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaLagFunktionarer"
-        payload = {"lagid": team_id}
+        payload = {"lagid": int(team_id)}
 
         return self._api_request(url, payload)
 
