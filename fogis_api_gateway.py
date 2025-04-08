@@ -119,7 +119,7 @@ def match(match_id):
     Endpoint to fetch match details from Fogis API Client.
     """
     try:
-        match_data = client.fetch_match_json(match_id)
+        match_data = client.fetch_match_json(int(match_id))
         return jsonify(match_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -131,7 +131,7 @@ def match_result(match_id):
     Endpoint to fetch result information for a specific match.
     """
     try:
-        result_data = client.fetch_match_result_json(match_id)
+        result_data = client.fetch_match_result_json(int(match_id))
         return jsonify(result_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -144,7 +144,7 @@ def match_events(match_id):
     """
     try:
         # Use the dedicated method for fetching match events
-        events_data = client.fetch_match_events_json(match_id)
+        events_data = client.fetch_match_events_json(int(match_id))
         return jsonify(events_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -164,7 +164,7 @@ def report_match_event(match_id):
 
         # Add match_id to the event data if not already present
         if "matchid" not in event_data:
-            event_data["matchid"] = match_id
+            event_data["matchid"] = int(match_id)
 
         result = client.report_match_event(event_data)
         return jsonify(result)
@@ -178,7 +178,7 @@ def clear_match_events(match_id):
     Endpoint to clear all events for a match.
     """
     try:
-        result = client.clear_match_events(match_id)
+        result = client.clear_match_events(int(match_id))
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -190,7 +190,7 @@ def match_officials(match_id):
     Endpoint to fetch officials information for a specific match.
     """
     try:
-        officials_data = client.fetch_match_officials_json(match_id)
+        officials_data = client.fetch_match_officials_json(int(match_id))
         return jsonify(officials_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -202,7 +202,7 @@ def team_players(team_id):
     Endpoint to fetch player information for a specific team.
     """
     try:
-        players_data = client.fetch_team_players_json(team_id)
+        players_data = client.fetch_team_players_json(int(team_id))
         return jsonify(players_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -214,7 +214,7 @@ def team_officials(team_id):
     Endpoint to fetch officials information for a specific team.
     """
     try:
-        officials_data = client.fetch_team_officials_json(team_id)
+        officials_data = client.fetch_team_officials_json(int(team_id))
         return jsonify(officials_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -226,7 +226,7 @@ def finish_match_report(match_id):
     Endpoint to mark a match report as completed/finished.
     """
     try:
-        result = client.mark_reporting_finished(match_id)
+        result = client.mark_reporting_finished(int(match_id))
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -28,14 +28,14 @@ class TestMarkReportingFinished(unittest.TestCase):
 
     def setUp(self):
         self.client = FogisApiClient("testuser", "testpassword")
-        
+
         # Create a mock session
         mock_session = Mock()
         mock_session.get = MagicMock()
         mock_session.post = MagicMock()
         mock_session.cookies = MagicMock(spec=dict)
         mock_session.cookies.set = MagicMock()
-        
+
         self.client.session = mock_session
         self.client.cookies = {'FogisMobilDomarKlient.ASPXAUTH': 'mock_auth_cookie'}  # Simulate being logged in
 
@@ -44,20 +44,20 @@ class TestMarkReportingFinished(unittest.TestCase):
         # Mock the API response
         mock_api_response = MockResponse(json_data={'d': {'success': True}}, status_code=200)
         self.client.session.post.return_value = mock_api_response
-        
+
         # Call mark_reporting_finished
         match_id = "123456"
         response_data = self.client.mark_reporting_finished(match_id)
-        
+
         # Verify the API request was made
         self.client.session.post.assert_called_once()
-        
+
         # Check the URL and payload
         args, kwargs = self.client.session.post.call_args
         url = args[0]  # The URL is the first positional argument
         self.assertIn("SparaMatchGodkannDomarrapport", url)
-        self.assertEqual({"matchid": match_id}, kwargs['json'])
-        
+        self.assertEqual({"matchid": int(match_id)}, kwargs['json'])
+
         # Verify the response data
         self.assertTrue(response_data['success'])
 
@@ -66,9 +66,9 @@ class TestMarkReportingFinished(unittest.TestCase):
         # Call mark_reporting_finished with an empty match ID
         with self.assertRaises(ValueError) as context:
             self.client.mark_reporting_finished("")
-        
+
         self.assertIn("match_id cannot be empty", str(context.exception))
-        
+
         # Verify the API request was not made
         self.client.session.post.assert_not_called()
 
@@ -78,14 +78,14 @@ class TestMarkReportingFinished(unittest.TestCase):
         mock_api_response = MockResponse(json_data={'d': {'error': 'Some API error'}}, status_code=400)
         self.client.session.post.return_value = mock_api_response
         mock_api_response.raise_for_status = MagicMock(side_effect=requests.exceptions.HTTPError("Mocked HTTP Error: 400"))
-        
+
         # Call mark_reporting_finished
         match_id = "123456"
-        
+
         # Verify that FogisAPIRequestError is raised
         with self.assertRaises(FogisAPIRequestError) as context:
             self.client.mark_reporting_finished(match_id)
-        
+
         # Verify the API request was made
         self.client.session.post.assert_called_once()
 
