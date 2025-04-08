@@ -291,6 +291,32 @@ class FogisApiClient:
 
         return self._api_request(result_url, payload)
 
+    def report_match_result(self, result_data):
+        """
+        Reports match results (halftime and fulltime) to the FOGIS API.
+
+        Args:
+            result_data (dict): Data containing match results. Should include:
+                - matchid (int): The ID of the match
+                - hemmamal (int): Full-time score for the home team
+                - bortamal (int): Full-time score for the away team
+                - halvtidHemmamal (int, optional): Half-time score for the home team
+                - halvtidBortamal (int, optional): Half-time score for the away team
+
+        Returns:
+            dict: Response from the API
+
+        Raises:
+            FogisLoginError: If not logged in
+            FogisAPIRequestError: If there's an error with the API request
+        """
+        # Ensure matchid is an integer
+        if 'matchid' in result_data:
+            result_data['matchid'] = int(result_data['matchid'])
+
+        result_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchresultatLista"
+        return self._api_request(result_url, result_data)
+
     def delete_match_event(self, event_id: int):
         """
         Deletes a specific event from a match.

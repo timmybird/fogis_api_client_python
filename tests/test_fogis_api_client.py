@@ -338,6 +338,63 @@ class TestFogisApiClient(unittest.TestCase):
             {"matchid": 12345}
         )
 
+    def test_report_match_result(self):
+        """Unit test for report_match_result method."""
+        # Mock the _api_request method
+        self.client._api_request = MagicMock(return_value={"success": True})
+
+        # Call report_match_result
+        result_data = {
+            "matchid": "12345",
+            "hemmamal": 2,
+            "bortamal": 1,
+            "halvtidHemmamal": 1,
+            "halvtidBortamal": 0
+        }
+        response = self.client.report_match_result(result_data)
+
+        # Verify the result
+        self.assertEqual(response, {"success": True})
+
+        # Verify the API call
+        self.client._api_request.assert_called_once_with(
+            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchresultatLista",
+            {
+                "matchid": 12345,  # Should be converted to int
+                "hemmamal": 2,
+                "bortamal": 1,
+                "halvtidHemmamal": 1,
+                "halvtidBortamal": 0
+            }
+        )
+
+    def test_report_match_result_error(self):
+        """Unit test for report_match_result method with error."""
+        # Mock the _api_request method to raise an exception
+        self.client._api_request = MagicMock(side_effect=FogisAPIRequestError("API request failed"))
+
+        # Call report_match_result and expect an exception
+        result_data = {
+            "matchid": "12345",
+            "hemmamal": 2,
+            "bortamal": 1
+        }
+        with self.assertRaises(FogisAPIRequestError) as excinfo:
+            self.client.report_match_result(result_data)
+
+        # Verify the exception message
+        self.assertIn("API request failed", str(excinfo.exception))
+
+        # Verify the API call
+        self.client._api_request.assert_called_once_with(
+            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchresultatLista",
+            {
+                "matchid": 12345,  # Should be converted to int
+                "hemmamal": 2,
+                "bortamal": 1
+            }
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
