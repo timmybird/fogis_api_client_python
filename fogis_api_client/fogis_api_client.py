@@ -8,6 +8,26 @@ import time
 import os
 from urllib.parse import urlparse, parse_qs
 
+# Event types dictionary for match events
+event_types = {  # Consistent Integer Keys for ALL event types (where applicable)
+    6: {"name": "Regular Goal", "goal": True},
+    39: {"name": "Header Goal", "goal": True},
+    28: {"name": "Corner Goal", "goal": True},
+    29: {"name": "Free Kick Goal", "goal": True},
+    15: {"name": "Own Goal", "goal": True},
+    14: {"name": "Penalty Goal", "goal": True},
+    18: {"name": "Penalty Missing Goal", "goal": False},
+    19: {"name": "Penalty Save", "goal": False},
+    26: {"name": "Penalty Hitting the Frame", "goal": False},
+    20: {"name": "Yellow Card", "goal": False},
+    8: {"name": "Red Card (Denying Goal Opportunity)", "goal": False},
+    9: {"name": "Red Card (Other Reasons)", "goal": False},
+    17: {"name": "Substitution", "goal": False},
+    31: {"name": "Period Start", "goal": False, "control_event": True},
+    32: {"name": "Period End", "goal": False, "control_event": True},
+    23: {"name": "Match Slut", "goal": False, "control_event": True}
+}
+
 # Custom exceptions
 class FogisLoginError(Exception):
     """Exception raised when login to FOGIS fails."""
