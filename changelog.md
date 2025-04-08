@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.0.6] - 2025-04-08
+
+### Added
+- Implemented lazy login in FogisApiClient - now the client only logs in when needed, improving performance and reliability
+- Added functionality to mark matches as done (mark_reporting_finished method)
+
+### Improved
+- Various improvements to the development environment (Docker setup, API Gateway, Swagger UI)
+- Enhanced CI/CD pipeline and testing infrastructure
+
 ## [0.0.5] - 2025-03-14
 
 ### Fixed
