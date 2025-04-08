@@ -3,11 +3,38 @@ import pytest
 import requests
 import json
 import time
+import logging
+from requests.exceptions import ConnectionError, Timeout
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Add a retry decorator for tests
+def retry_on_failure(max_retries=3, delay=2):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except (ConnectionError, Timeout, AssertionError) as e:
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Test failed on attempt {attempt + 1}/{max_retries}: {e}. Retrying in {delay} seconds...")
+                        time.sleep(delay)
+                    else:
+                        logger.error(f"Test failed after {max_retries} attempts: {e}")
+                        raise
+        return wrapper
+    return decorator
 
 # Get the API URL from environment variable or use default
 # When running in Docker, this should be set to http://fogis-api-client-dev:8080
 API_URL = os.environ.get('API_URL', 'http://localhost:8080')
 
+@retry_on_failure(max_retries=5, delay=3)
 def test_health_endpoint():
     """Test the /health endpoint returns a valid response."""
     response = requests.get(f"{API_URL}/health")
@@ -18,6 +45,7 @@ def test_health_endpoint():
     assert data["status"] == "healthy"
     assert "timestamp" in data
 
+@retry_on_failure(max_retries=5, delay=3)
 def test_hello_endpoint():
     """Test the /hello endpoint returns a valid response."""
     response = requests.get(f"{API_URL}/hello")

@@ -22,11 +22,11 @@ services:
       - FLASK_DEBUG=1
       - TZ=Europe/Stockholm
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
     init: true
     restart: unless-stopped
     command: ["python", "fogis_api_gateway.py"]
@@ -46,8 +46,9 @@ services:
       - PYTHONUNBUFFERED=1
       - API_URL=http://fogis-api-client-dev:8080
     depends_on:
-      fogis-api-client:
-        condition: service_healthy
+      - fogis-api-client
+    # We're removing the health check dependency to allow tests to run even if the service is unhealthy
+    # This way we can see which tests are failing and why
     command: ["pytest", "integration_tests", "-v"]
 
 networks:

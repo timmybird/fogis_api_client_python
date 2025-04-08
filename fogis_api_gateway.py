@@ -33,6 +33,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Log startup information
+logger.info("Starting FOGIS API Gateway...")
+logger.info(f"FOGIS_USERNAME: {fogis_username}")
+logger.info(f"Debug mode: {debug_mode}")
+logger.info(f"Python version: {sys.version}")
+
 # Initialize the Flask app
 app = Flask(__name__)
 if CORS:
@@ -249,5 +255,13 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
 
-    # Start the Flask app
-    app.run(host="0.0.0.0", port=8080, debug=debug_mode)
+    # Log that we're about to start the Flask app
+    logger.info("Starting Flask app on 0.0.0.0:8080")
+    logger.info(f"Debug mode: {debug_mode}")
+
+    try:
+        # Start the Flask app
+        app.run(host="0.0.0.0", port=8080, debug=debug_mode)
+    except Exception as e:
+        logger.error(f"Error starting Flask app: {e}")
+        raise

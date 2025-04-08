@@ -8,7 +8,12 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl \
     git \
+    procps \
+    net-tools \
     && rm -rf /var/lib/apt/lists/*
+
+# Verify curl is installed
+RUN curl --version
 
 # Copy the package files
 COPY . .
