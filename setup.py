@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="fogis-api-client-timmyBird",
-    version="0.0.8",
+    version="0.0.9",
     author="Bartek Svaberg",
     author_email="bartek.svaberg@gmail.com",
     description="A Python client for the FOGIS API (Svensk Fotboll)",
