@@ -359,6 +359,38 @@ class FogisApiClient:
         # Check if deletion was successful
         return response_data.get('success', False)
 
+    def report_team_official_action(self, action_data: dict):
+        """
+        Reports team official disciplinary action to the FOGIS API.
+
+        Args:
+            action_data (dict): Data containing team official action details. Should include:
+                - matchid (int): The ID of the match
+                - lagid (int): The ID of the team
+                - personid (int): The ID of the team official
+                - matchlagledaretypid (int): The type ID of the disciplinary action
+                - minut (int, optional): The minute when the action occurred
+
+        Returns:
+            dict: Response from the API
+
+        Raises:
+            FogisLoginError: If not logged in
+            FogisAPIRequestError: If there's an error with the API request
+        """
+        # Ensure IDs are integers
+        if 'matchid' in action_data:
+            action_data['matchid'] = int(action_data['matchid'])
+        if 'lagid' in action_data:
+            action_data['lagid'] = int(action_data['lagid'])
+        if 'personid' in action_data:
+            action_data['personid'] = int(action_data['personid'])
+        if 'matchlagledaretypid' in action_data:
+            action_data['matchlagledaretypid'] = int(action_data['matchlagledaretypid'])
+
+        action_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchlagledare"
+        return self._api_request(action_url, action_data)
+
     def clear_match_events(self, match_id: int):
         """
         Clear all events for a match.
