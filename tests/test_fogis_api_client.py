@@ -420,6 +420,65 @@ class TestFogisApiClient(unittest.TestCase):
         self.assertIn("control_event", event_types[31])
         self.assertTrue(event_types[31]["control_event"])
 
+    def test_report_team_official_action(self):
+        """Unit test for report_team_official_action method."""
+        # Mock the _api_request method
+        self.client._api_request = MagicMock(return_value={"success": True})
+
+        # Call report_team_official_action
+        action_data = {
+            "matchid": "12345",
+            "lagid": "67890",
+            "personid": "54321",
+            "matchlagledaretypid": "2",  # Example: Yellow card
+            "minut": 65
+        }
+        response = self.client.report_team_official_action(action_data)
+
+        # Verify the result
+        self.assertEqual(response, {"success": True})
+
+        # Verify the API call
+        self.client._api_request.assert_called_once_with(
+            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchlagledare",
+            {
+                "matchid": 12345,  # Should be converted to int
+                "lagid": 67890,  # Should be converted to int
+                "personid": 54321,  # Should be converted to int
+                "matchlagledaretypid": 2,  # Should be converted to int
+                "minut": 65
+            }
+        )
+
+    def test_report_team_official_action_error(self):
+        """Unit test for report_team_official_action method with error."""
+        # Mock the _api_request method to raise an exception
+        self.client._api_request = MagicMock(side_effect=FogisAPIRequestError("API request failed"))
+
+        # Call report_team_official_action and expect an exception
+        action_data = {
+            "matchid": "12345",
+            "lagid": "67890",
+            "personid": "54321",
+            "matchlagledaretypid": "2"
+        }
+        with self.assertRaises(FogisAPIRequestError) as excinfo:
+            self.client.report_team_official_action(action_data)
+
+        # Verify the exception message
+        self.assertIn("API request failed", str(excinfo.exception))
+
+        # Verify the API call
+        self.client._api_request.assert_called_once_with(
+            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchlagledare",
+            {
+                "matchid": 12345,  # Should be converted to int
+                "lagid": 67890,  # Should be converted to int
+                "personid": 54321,  # Should be converted to int
+                "matchlagledaretypid": 2  # Should be converted to int
+            }
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
