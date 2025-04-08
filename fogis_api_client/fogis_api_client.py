@@ -281,7 +281,7 @@ class FogisApiClient:
 
     def fetch_match_result_json(self, match_id: int):
         """
-        Fetches result information for a specific match.
+        Fetches the list of match results in JSON format for a given match ID.
 
         Args:
             match_id (int): The ID of the match
@@ -293,21 +293,22 @@ class FogisApiClient:
             FogisLoginError: If not logged in
             FogisAPIRequestError: If there's an error with the API request
         """
-        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaMatchResultat"
+        result_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatchresultatlista"
         payload = {"matchid": int(match_id)}
 
-        return self._api_request(url, payload)
+        return self._api_request(result_url, payload)
 
-    def report_match_result(self, match_id: int, home_score: int, away_score: int, half_time_home_score: int = None, half_time_away_score: int = None):
+    def report_match_result(self, result_data):
         """
-        Reports or updates the result for a match (half-time and full-time scores).
+        Reports match results (halftime and fulltime) to the FOGIS API.
 
         Args:
-            match_id (int): The ID of the match
-            home_score (int): Full-time score for the home team
-            away_score (int): Full-time score for the away team
-            half_time_home_score (int, optional): Half-time score for the home team
-            half_time_away_score (int, optional): Half-time score for the away team
+            result_data (dict): Data containing match results. Should include:
+                - matchid (int): The ID of the match
+                - hemmamal (int): Full-time score for the home team
+                - bortamal (int): Full-time score for the away team
+                - halvtidHemmamal (int, optional): Half-time score for the home team
+                - halvtidBortamal (int, optional): Half-time score for the away team
 
         Returns:
             dict: Response from the API
@@ -315,33 +316,13 @@ class FogisApiClient:
         Raises:
             FogisLoginError: If not logged in
             FogisAPIRequestError: If there's an error with the API request
-            ValueError: If invalid scores are provided
         """
-        # Validate inputs
-        if home_score < 0 or away_score < 0:
-            raise ValueError("Scores cannot be negative")
+        # Ensure matchid is an integer
+        if 'matchid' in result_data:
+            result_data['matchid'] = int(result_data['matchid'])
 
-        if (half_time_home_score is not None and half_time_away_score is None) or \
-           (half_time_home_score is None and half_time_away_score is not None):
-            raise ValueError("Both half-time scores must be provided together")
-
-        if half_time_home_score is not None and (half_time_home_score < 0 or half_time_away_score < 0):
-            raise ValueError("Half-time scores cannot be negative")
-
-        # Prepare payload
-        payload = {
-            "matchid": int(match_id),
-            "hemmamal": int(home_score),
-            "bortamal": int(away_score)
-        }
-
-        # Add half-time scores if provided
-        if half_time_home_score is not None and half_time_away_score is not None:
-            payload["halvtidHemmamal"] = int(half_time_home_score)
-            payload["halvtidBortamal"] = int(half_time_away_score)
-
-        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchResultat"
-        return self._api_request(url, payload)
+        result_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchresultatLista"
+        return self._api_request(result_url, result_data)
 
     def delete_match_event(self, event_id: int):
         """

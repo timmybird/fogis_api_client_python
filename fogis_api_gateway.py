@@ -144,10 +144,10 @@ def report_match_result(match_id):
 
     Expected JSON payload:
     {
-        "home_score": int,
-        "away_score": int,
-        "half_time_home_score": int,  # optional
-        "half_time_away_score": int   # optional
+        "hemmamal": int,  # Full-time score for the home team
+        "bortamal": int,  # Full-time score for the away team
+        "halvtidHemmamal": int,  # optional - Half-time score for the home team
+        "halvtidBortamal": int   # optional - Half-time score for the away team
     }
     """
     # Check if JSON data was provided
@@ -155,28 +155,17 @@ def report_match_result(match_id):
         return jsonify({"error": "No result data provided"}), 400
 
     try:
-        data = request.json
+        # Get the data from the request
+        result_data = request.json
 
-        # Extract required fields
-        if 'home_score' not in data or 'away_score' not in data:
-            return jsonify({"error": "home_score and away_score are required"}), 400
-
-        # Extract optional fields
-        half_time_home_score = data.get('half_time_home_score')
-        half_time_away_score = data.get('half_time_away_score')
+        # Add match_id to the result data if not already present
+        if "matchid" not in result_data:
+            result_data["matchid"] = int(match_id)
 
         # Call the API client method
-        result = client.report_match_result(
-            match_id=int(match_id),
-            home_score=int(data['home_score']),
-            away_score=int(data['away_score']),
-            half_time_home_score=int(half_time_home_score) if half_time_home_score is not None else None,
-            half_time_away_score=int(half_time_away_score) if half_time_away_score is not None else None
-        )
+        result = client.report_match_result(result_data)
 
         return jsonify(result)
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
