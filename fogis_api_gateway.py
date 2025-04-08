@@ -125,7 +125,7 @@ def match(match_id):
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/match/<match_id>/result", methods=["GET"])
+@app.route("/match/<match_id>/result")
 def match_result(match_id):
     """
     Endpoint to fetch result information for a specific match.
@@ -133,39 +133,6 @@ def match_result(match_id):
     try:
         result_data = client.fetch_match_result_json(int(match_id))
         return jsonify(result_data)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/match/<match_id>/result", methods=["POST"])
-def report_match_result(match_id):
-    """
-    Endpoint to report or update the result for a match.
-
-    Expected JSON payload:
-    {
-        "hemmamal": int,  # Full-time score for the home team
-        "bortamal": int,  # Full-time score for the away team
-        "halvtidHemmamal": int,  # optional - Half-time score for the home team
-        "halvtidBortamal": int   # optional - Half-time score for the away team
-    }
-    """
-    # Check if JSON data was provided
-    if not request.is_json or not request.json:
-        return jsonify({"error": "No result data provided"}), 400
-
-    try:
-        # Get the data from the request
-        result_data = request.json
-
-        # Add match_id to the result data if not already present
-        if "matchid" not in result_data:
-            result_data["matchid"] = int(match_id)
-
-        # Call the API client method
-        result = client.report_match_result(result_data)
-
-        return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
