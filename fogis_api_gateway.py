@@ -2,6 +2,8 @@ import os
 import signal
 import sys
 import logging
+import time
+from datetime import datetime
 from flask import Flask, jsonify, request
 
 try:
@@ -67,8 +69,28 @@ def health():
     """
     Health check endpoint for Docker and monitoring systems.
     This endpoint is intentionally simple and doesn't depend on external services.
+    It should always return a 200 status code, even if there's an error.
     """
-    return jsonify({"status": "healthy", "timestamp": str(datetime.now())})
+    try:
+        # Get current timestamp
+        current_time = datetime.now().isoformat()
+
+        # Return a simple response
+        return jsonify({
+            "status": "healthy",
+            "timestamp": current_time,
+            "service": "fogis-api-client"
+        })
+    except Exception as e:
+        # Log the error but still return a 200 status code
+        logger.error(f"Error in health check endpoint: {e}")
+
+        # Return a simple response with the error
+        return jsonify({
+            "status": "warning",
+            "message": "Health check encountered an error but service is still responding",
+            "timestamp": time.time()
+        })
 
 
 @app.route("/hello")

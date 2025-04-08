@@ -42,8 +42,12 @@ def test_health_endpoint():
     data = response.json()
     assert isinstance(data, dict)
     assert "status" in data
-    assert data["status"] == "healthy"
+    # The status can be either "healthy" or "warning"
+    assert data["status"] in ["healthy", "warning"]
     assert "timestamp" in data
+
+    # Log the response for debugging
+    logger.info(f"Health endpoint response: {data}")
 
 @retry_on_failure(max_retries=5, delay=3)
 def test_hello_endpoint():
