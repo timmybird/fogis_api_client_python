@@ -17,5 +17,5 @@ COPY fogis_api_client_http_wrapper.py .
 # ENV FOGIS_USERNAME=your_fogis_username_placeholder
 # ENV FOGIS_PASSWORD=your_fogis_password_placeholder
 
-# Command to run when the container starts - the Flask API wrapper
-CMD ["python", "fogis_api_client_http_wrapper.py"]
+# Command to run when the container starts - the Flask API Gateway
+CMD ["python", "fogis_api_gateway.py"]
