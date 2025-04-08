@@ -33,3 +33,6 @@ build/
 
 # Environment variables
 .env
+.env.dev
+.env.*
+!.env.example

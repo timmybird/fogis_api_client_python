@@ -3,46 +3,67 @@
 # Create necessary directories if they don't exist
 mkdir -p test-results
 
-# Ensure the Docker network exists
-echo "Ensuring Docker network exists..."
-# First remove any existing network with the same name that might not be created by compose
-docker network rm fogis-network 2>/dev/null || true
-# Then create a fresh network
-docker network create fogis-network
-
 # Start the development environment if it's not already running
 if ! docker ps | grep -q fogis-api-client-dev; then
     echo "Starting development environment..."
+
+    # Remove any existing containers to ensure a clean start
+    docker compose -f docker-compose.dev.yml down -v 2>/dev/null || true
+
+    # Create the network if it doesn't exist
+    docker network create fogis-network 2>/dev/null || true
+
+    # Start the service in the foreground to see logs
+    echo "Starting API service and showing logs for 10 seconds..."
+    docker compose -f docker-compose.dev.yml up fogis-api-client &
+    DOCKER_PID=$!
+    sleep 10
+    kill $DOCKER_PID 2>/dev/null || true
+
+    # Now start it in the background
+    echo "Starting API service in the background..."
     docker compose -f docker-compose.dev.yml up -d fogis-api-client
 
-    # Wait for the service to be responsive with a timeout
-    echo "Waiting for API service to be responsive..."
-    TIMEOUT=120
-    ELAPSED=0
+    # Wait for the service to be healthy with a timeout
+    echo "Waiting for API service to be healthy..."
+    TIMEOUT=300  # 5 minutes timeout
+    START_TIME=$(date +%s)
 
-    # Show initial container status
-    echo "Initial container status:"
-    docker ps
+    # Try to manually check if the service is responding
+    echo "Checking if API service is responding..."
+    docker exec fogis-api-client-dev curl -v http://localhost:8080/ || echo "Initial curl check failed, but continuing..."
 
-    # Wait for the service to be responsive
-    while ! curl -s http://localhost:8080/ > /dev/null; do
-        sleep 2
-        ELAPSED=$((ELAPSED+2))
-        if [ $ELAPSED -ge $TIMEOUT ]; then
-            echo "Timeout waiting for service to be responsive. Continuing anyway..."
-            break
-        fi
-        # After a few attempts, check if the container is running and show logs
-        if [ $ELAPSED -eq 20 ]; then
-            echo "Container status:"
-            docker ps
-            echo "Container logs so far:"
+    while ! docker ps | grep -q "fogis-api-client-dev.*healthy"; do
+        CURRENT_TIME=$(date +%s)
+        ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+
+        if [ $ELAPSED_TIME -gt $TIMEOUT ]; then
+            echo "Timeout waiting for API service to become healthy after $TIMEOUT seconds."
+            echo "Checking container logs for errors:"
             docker logs fogis-api-client-dev
-        fi
-    done
+            echo "Container status:"
+            docker ps | grep fogis-api-client-dev
+            echo "Trying to access the API directly:"
+            docker exec fogis-api-client-dev curl -v http://localhost:8080/ || echo "Curl check failed"
 
-    # If we got here, the service is responsive
-    echo "Service is responsive, proceeding with tests"
+            # Try to restart the container
+            echo "Attempting to restart the container..."
+            docker restart fogis-api-client-dev
+            sleep 10
+
+            # Check if it's healthy now
+            if docker ps | grep -q "fogis-api-client-dev.*healthy"; then
+                echo "Container is now healthy after restart!"
+                break
+            else
+                echo "Container is still unhealthy after restart. Continuing anyway..."
+                break
+            fi
+        fi
+
+        echo "Still waiting... ($ELAPSED_TIME seconds elapsed)"
+        sleep 5
+    done
 fi
 
 # Run the integration tests
