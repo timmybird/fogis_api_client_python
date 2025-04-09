@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.11] - 2025-04-08
+
+### Changed
+- Reverted to v0.0.5 codebase due to critical issues in later versions
+- Created CHANGES_SINCE_V0.0.5.md to document features that need to be re-implemented
+
+
 ## [0.0.5] - 2025-03-14
 
 ### Fixed
