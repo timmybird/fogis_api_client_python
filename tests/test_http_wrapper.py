@@ -6,12 +6,12 @@ import sys
 from flask import Flask
 from flask.testing import FlaskClient
 
-# Import the Flask app from the HTTP wrapper
+# Import the Flask app from the API Gateway
 import fogis_api_client_http_wrapper
 
 
 class TestHttpWrapper(unittest.TestCase):
-    """Test cases for the HTTP wrapper."""
+    """Test cases for the API Gateway."""
 
     def setUp(self):
         """Set up test fixtures."""
@@ -48,7 +48,7 @@ class TestHttpWrapper(unittest.TestCase):
         response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json, dict)
-        self.assertEqual(response.json, {"status": "ok", "message": "Fogis API Client HTTP Wrapper"})
+        self.assertEqual(response.json, {"status": "ok", "message": "FOGIS API Gateway"})
 
     @patch('fogis_api_client_http_wrapper.client.fetch_matches_list_json')
     def test_matches_endpoint(self, mock_fetch):

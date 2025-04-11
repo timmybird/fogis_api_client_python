@@ -13,8 +13,10 @@ COPY . .
 # Assuming setup.py is in the volume-mounted directory
 RUN pip install --no-cache-dir -e .
 
-# Copy the HTTP API wrapper script
+# Copy the API Gateway script
 COPY fogis_api_client_http_wrapper.py .
+COPY fogis_api_gateway.py .
+COPY fogis_api_client_swagger.py .
 
 # Define environment variables (Username and Password) - placeholders (you can keep or remove these, they are set in docker run anyway)
 # ENV FOGIS_USERNAME=your_fogis_username_placeholder

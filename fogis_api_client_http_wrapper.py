@@ -1,6 +1,9 @@
 import os
 import signal
 import sys
+import logging
+import time
+from datetime import datetime
 from flask import Flask, jsonify, request
 
 try:
@@ -11,6 +14,17 @@ except ImportError:
 
 from fogis_api_client.fogis_api_client import FogisApiClient
 from fogis_api_client.match_list_filter import MatchListFilter
+from fogis_api_client_swagger import get_swagger_blueprint, spec
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # Get environment variables
 fogis_username = os.environ.get("FOGIS_USERNAME", "test_user")
@@ -19,12 +33,33 @@ debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
 
 # Initialize the Fogis API client but don't login yet
 # Login will happen automatically when needed (lazy login)
-client = FogisApiClient(fogis_username, fogis_password)
+try:
+    client = FogisApiClient(fogis_username, fogis_password)
+    client_initialized = True
+except Exception as e:
+    logger.error(f"Failed to initialize FogisApiClient: {e}")
+    client = None
+    client_initialized = False
+
+# Log startup information
+logger.info("Starting FOGIS API Gateway...")
+logger.info(f"FOGIS_USERNAME: {fogis_username}")
+logger.info(f"Debug mode: {debug_mode}")
+logger.info(f"Python version: {sys.version}")
 
 # Initialize the Flask app
 app = Flask(__name__)
 if CORS:
     CORS(app)  # Enable CORS for all routes if available
+
+# Register Swagger UI blueprint
+swagger_ui_blueprint, SWAGGER_URL, API_URL = get_swagger_blueprint()
+app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
+
+# Add endpoint to serve the OpenAPI specification
+@app.route('/api/swagger.json')
+def get_swagger():
+    return jsonify(spec.to_dict())
 
 
 @app.route("/")
@@ -32,7 +67,36 @@ def index():
     """
     Test endpoint to verify the API is running.
     """
-    return jsonify({"status": "ok", "message": "Fogis API Client HTTP Wrapper"})
+    return jsonify({"status": "ok", "message": "FOGIS API Gateway"})
+
+
+@app.route("/health")
+def health():
+    """
+    Health check endpoint for Docker and monitoring systems.
+    This endpoint is intentionally simple and doesn't depend on external services.
+    It should always return a 200 status code, even if there's an error.
+    """
+    try:
+        # Get current timestamp
+        current_time = datetime.now().isoformat()
+
+        # Return a simple response
+        return jsonify({
+            "status": "healthy",
+            "timestamp": current_time,
+            "service": "fogis-api-client"
+        })
+    except Exception as e:
+        # Log the error but still return a 200 status code
+        logger.error(f"Error in health check endpoint: {e}")
+
+        # Return a simple response with the error
+        return jsonify({
+            "status": "warning",
+            "message": "Health check encountered an error but service is still responding",
+            "timestamp": time.time()
+        })
 
 
 @app.route("/hello")
@@ -40,6 +104,8 @@ def hello():
     """
     Test endpoint that calls the hello_world method of the Fogis API Client.
     """
+    if not client_initialized:
+        return jsonify({"message": "FOGIS API client not initialized, but hello endpoint is still working!"})
     return jsonify({"message": client.hello_world()})
 
 
@@ -432,5 +498,13 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
 
-    # Start the Flask app
-    app.run(host="0.0.0.0", port=8080, debug=debug_mode)
+    # Log that we're about to start the Flask app
+    logger.info("Starting Flask app on 0.0.0.0:8080")
+    logger.info(f"Debug mode: {debug_mode}")
+
+    try:
+        # Start the Flask app
+        app.run(host="0.0.0.0", port=8080, debug=debug_mode)
+    except Exception as e:
+        logger.error(f"Error starting Flask app: {e}")
+        raise
