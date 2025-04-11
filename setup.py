@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="fogis-api-client-timmyBird",
-    version="0.0.10",
+    version="0.0.11",
     author="Bartek Svaberg",
     author_email="bartek.svaberg@gmail.com",
     description="A Python client for the FOGIS API (Svensk Fotboll)",
@@ -22,10 +22,6 @@ setuptools.setup(
     install_requires=[
         "requests",
         "beautifulsoup4",
-        "flask",
-        "apispec>=6.0.0",
-        "flask-swagger-ui",
-        "marshmallow",
     ],
     extras_require={
         'dev': [
@@ -33,10 +29,6 @@ setuptools.setup(
             'pytest-mock',
             'pytest-cov',
             'flake8',
-            'docker',
-            'apispec>=6.0.0',
-            'flask-swagger-ui',
-            'marshmallow',
         ],
     },
     include_package_data=True,

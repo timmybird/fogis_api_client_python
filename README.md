@@ -1,6 +1,8 @@
 # fogis_api_client
 ### A Python client for interacting with the FOGIS API (Svensk Fotboll).
 
+> **IMPORTANT NOTE**: Version 0.0.11 is a revert to the v0.0.5 codebase due to critical issues in later versions. See CHANGES_SINCE_V0.0.5.md for features that will be re-implemented in future versions.
+
 #### Features
 * Authentication with FOGIS API.
 * Lazy login - automatically authenticates when needed.
