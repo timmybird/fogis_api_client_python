@@ -1,7 +1,8 @@
 import os
 import signal
 import sys
-from flask import Flask, jsonify, request
+from typing import Dict, List, Any, Optional, Union, Tuple
+from flask import Flask, jsonify, request, Response
 
 try:
     from flask_cors import CORS  # Import CORS for development
@@ -19,7 +20,7 @@ debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
 
 # Initialize the Fogis API client but don't login yet
 # Login will happen automatically when needed (lazy login)
-client = FogisApiClient(fogis_username, fogis_password)
+client: FogisApiClient = FogisApiClient(fogis_username, fogis_password)
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -28,23 +29,29 @@ if CORS:
 
 
 @app.route("/")
-def index():
+def index() -> Response:
     """
     Test endpoint to verify the API is running.
+
+    Returns:
+        Response: JSON response with status and message
     """
     return jsonify({"status": "ok", "message": "Fogis API Client HTTP Wrapper"})
 
 
 @app.route("/hello")
-def hello():
+def hello() -> Response:
     """
     Test endpoint that calls the hello_world method of the Fogis API Client.
+
+    Returns:
+        Response: JSON response with the hello world message
     """
     return jsonify({"message": client.hello_world()})
 
 
 @app.route("/matches")
-def matches():
+def matches() -> Union[Response, Tuple[Response, int]]:
     """
     Endpoint to fetch matches list from Fogis API Client.
 
@@ -55,29 +62,32 @@ def matches():
     - offset (int): Number of matches to skip (for pagination, default: 0)
     - sort_by (str): Field to sort by (default: date)
     - order (str): Sort order, 'asc' or 'desc' (default: asc)
+
+    Returns:
+        Union[Response, Tuple[Response, int]]: JSON response with matches list or error message
     """
     try:
         # Parse query parameters
-        from_date = request.args.get('from_date')
-        to_date = request.args.get('to_date')
-        limit = request.args.get('limit')
-        offset = request.args.get('offset', 0, type=int)
-        sort_by = request.args.get('sort_by', 'datum')
-        order = request.args.get('order', 'asc')
+        from_date: Optional[str] = request.args.get('from_date')
+        to_date: Optional[str] = request.args.get('to_date')
+        limit: Optional[str] = request.args.get('limit')
+        offset: int = request.args.get('offset', 0, type=int)
+        sort_by: str = request.args.get('sort_by', 'datum')
+        order: str = request.args.get('order', 'asc')
 
         # Create filter for server-side filtering
-        filter_data = {}
+        filter_data: Dict[str, str] = {}
         if from_date:
             filter_data['datumFran'] = from_date
         if to_date:
             filter_data['datumTill'] = to_date
 
         # Fetch matches with server-side filtering
-        matches_list = client.fetch_matches_list_json(filter=filter_data)
+        matches_list: List[Dict[str, Any]] = client.fetch_matches_list_json(filter=filter_data)
 
         # Apply client-side sorting
         if sort_by and sort_by in ['datum', 'hemmalag', 'bortalag', 'tavling']:
-            reverse = order.lower() == 'desc'
+            reverse: bool = order.lower() == 'desc'
             matches_list = sorted(
                 matches_list,
                 key=lambda x: x.get(sort_by, ''),
@@ -87,8 +97,8 @@ def matches():
         # Apply client-side pagination
         if limit:
             try:
-                limit = int(limit)
-                matches_list = matches_list[offset:offset+limit]
+                limit_int: int = int(limit)
+                matches_list = matches_list[offset:offset+limit_int]
             except ValueError:
                 pass  # Ignore invalid limit values
         elif offset > 0:
@@ -100,23 +110,29 @@ def matches():
 
 
 @app.route("/match/<match_id>")
-def match(match_id):
+def match(match_id: str) -> Union[Response, Tuple[Response, int]]:
     """
     Endpoint to fetch match details from Fogis API Client.
+
+    Args:
+        match_id (str): The ID of the match to fetch
 
     Query Parameters:
     - include_events (bool): Whether to include events in the response (default: true)
     - include_players (bool): Whether to include players in the response (default: false)
     - include_officials (bool): Whether to include officials in the response (default: false)
+
+    Returns:
+        Union[Response, Tuple[Response, int]]: JSON response with match details or error message
     """
     try:
         # Parse query parameters
-        include_events = request.args.get('include_events', 'true').lower() == 'true'
-        include_players = request.args.get('include_players', 'false').lower() == 'true'
-        include_officials = request.args.get('include_officials', 'false').lower() == 'true'
+        include_events: bool = request.args.get('include_events', 'true').lower() == 'true'
+        include_players: bool = request.args.get('include_players', 'false').lower() == 'true'
+        include_officials: bool = request.args.get('include_officials', 'false').lower() == 'true'
 
         # Fetch basic match data
-        match_data = client.fetch_match_json(match_id)
+        match_data: Dict[str, Any] = client.fetch_match_json(match_id)
 
         # Fetch additional data based on query parameters
         if include_players:
@@ -145,9 +161,15 @@ def match(match_id):
 
 
 @app.route("/match/<match_id>/result")
-def match_result(match_id):
+def match_result(match_id: str) -> Union[Response, Tuple[Response, int]]:
     """
     Endpoint to fetch result information for a specific match.
+
+    Args:
+        match_id (str): The ID of the match to fetch result for
+
+    Returns:
+        Union[Response, Tuple[Response, int]]: JSON response with match result or error message
     """
     try:
         result_data = client.fetch_match_result_json(match_id)
@@ -157,9 +179,12 @@ def match_result(match_id):
 
 
 @app.route("/match/<match_id>/events", methods=["GET"])
-def match_events(match_id):
+def match_events(match_id: str) -> Union[Response, Tuple[Response, int]]:
     """
     Endpoint to fetch events for a specific match.
+
+    Args:
+        match_id (str): The ID of the match to fetch events for
 
     Query Parameters:
     - type (str): Filter events by type (e.g., 'goal', 'card', 'substitution')
@@ -169,6 +194,9 @@ def match_events(match_id):
     - offset (int): Number of events to skip (for pagination, default: 0)
     - sort_by (str): Field to sort by (default: time)
     - order (str): Sort order, 'asc' or 'desc' (default: asc)
+
+    Returns:
+        Union[Response, Tuple[Response, int]]: JSON response with match events or error message
     """
     try:
         # Parse query parameters
@@ -216,9 +244,15 @@ def match_events(match_id):
 
 
 @app.route("/match/<match_id>/events", methods=["POST"])
-def report_match_event(match_id):
+def report_match_event(match_id: str) -> Union[Response, Tuple[Response, int]]:
     """
     Endpoint to report a new event for a match.
+
+    Args:
+        match_id (str): The ID of the match to report an event for
+
+    Returns:
+        Union[Response, Tuple[Response, int]]: JSON response with the result or error message
     """
     # Check if JSON data was provided
     if not request.is_json or not request.json:
@@ -238,9 +272,15 @@ def report_match_event(match_id):
 
 
 @app.route("/match/<match_id>/events/clear", methods=["POST"])
-def clear_match_events(match_id):
+def clear_match_events(match_id: str) -> Union[Response, Tuple[Response, int]]:
     """
     Endpoint to clear all events for a match.
+
+    Args:
+        match_id (str): The ID of the match to clear events for
+
+    Returns:
+        Union[Response, Tuple[Response, int]]: JSON response with the result or error message
     """
     try:
         result = client.clear_match_events(match_id)
@@ -250,9 +290,15 @@ def clear_match_events(match_id):
 
 
 @app.route("/match/<match_id>/officials")
-def match_officials(match_id):
+def match_officials(match_id: str) -> Union[Response, Tuple[Response, int]]:
     """
     Endpoint to fetch officials information for a specific match.
+
+    Args:
+        match_id (str): The ID of the match to fetch officials for
+
+    Returns:
+        Union[Response, Tuple[Response, int]]: JSON response with match officials or error message
     """
     try:
         officials_data = client.fetch_match_officials_json(match_id)
@@ -262,9 +308,12 @@ def match_officials(match_id):
 
 
 @app.route("/team/<team_id>/players")
-def team_players(team_id):
+def team_players(team_id: str) -> Union[Response, Tuple[Response, int]]:
     """
     Endpoint to fetch player information for a specific team.
+
+    Args:
+        team_id (str): The ID of the team to fetch players for
 
     Query Parameters:
     - name (str): Filter players by name
@@ -274,6 +323,9 @@ def team_players(team_id):
     - offset (int): Number of players to skip (for pagination, default: 0)
     - sort_by (str): Field to sort by (default: name)
     - order (str): Sort order, 'asc' or 'desc' (default: asc)
+
+    Returns:
+        Union[Response, Tuple[Response, int]]: JSON response with team players or error message
     """
     try:
         # Parse query parameters
@@ -321,9 +373,12 @@ def team_players(team_id):
 
 
 @app.route("/team/<team_id>/officials")
-def team_officials(team_id):
+def team_officials(team_id: str) -> Union[Response, Tuple[Response, int]]:
     """
     Endpoint to fetch officials information for a specific team.
+
+    Args:
+        team_id (str): The ID of the team to fetch officials for
 
     Query Parameters:
     - name (str): Filter officials by name
@@ -332,6 +387,9 @@ def team_officials(team_id):
     - offset (int): Number of officials to skip (for pagination, default: 0)
     - sort_by (str): Field to sort by (default: name)
     - order (str): Sort order, 'asc' or 'desc' (default: asc)
+
+    Returns:
+        Union[Response, Tuple[Response, int]]: JSON response with team officials or error message
     """
     try:
         # Parse query parameters
@@ -376,9 +434,15 @@ def team_officials(team_id):
 
 
 @app.route("/match/<match_id>/finish", methods=["POST"])
-def finish_match_report(match_id):
+def finish_match_report(match_id: str) -> Union[Response, Tuple[Response, int]]:
     """
     Endpoint to mark a match report as completed/finished.
+
+    Args:
+        match_id (str): The ID of the match to mark as finished
+
+    Returns:
+        Union[Response, Tuple[Response, int]]: JSON response with the result or error message
     """
     try:
         result = client.mark_reporting_finished(match_id)
@@ -388,9 +452,12 @@ def finish_match_report(match_id):
 
 
 @app.route("/matches/filter", methods=["POST"])
-def filtered_matches():
+def filtered_matches() -> Union[Response, Tuple[Response, int]]:
     """
     Endpoint to fetch matches with specific filters.
+
+    Returns:
+        Union[Response, Tuple[Response, int]]: JSON response with filtered matches or error message
     """
     try:
         filter_data = request.json or {}
@@ -419,9 +486,13 @@ def filtered_matches():
         return jsonify({"error": str(e)}), 500
 
 
-def signal_handler(sig, frame):
+def signal_handler(sig: int, frame: Any) -> None:
     """
     Handle SIGTERM and SIGINT signals to gracefully shut down the server.
+
+    Args:
+        sig (int): Signal number
+        frame (Any): Current stack frame
     """
     print("Shutting down...")
     sys.exit(0)

@@ -7,9 +7,10 @@ from datetime import datetime
 import time
 import os
 from urllib.parse import urlparse, parse_qs
+from typing import Dict, List, Any, Optional, Union, Tuple, cast
 
 # Event types dictionary for match events
-event_types = {  # Consistent Integer Keys for ALL event types (where applicable)
+event_types: Dict[int, Dict[str, Any]] = {  # Consistent Integer Keys for ALL event types (where applicable)
     6: {"name": "Regular Goal", "goal": True},
     39: {"name": "Header Goal", "goal": True},
     28: {"name": "Corner Goal", "goal": True},
@@ -49,10 +50,10 @@ class FogisApiClient:
     when making API requests if not already logged in. You can also explicitly call
     login() if you want to pre-authenticate.
     """
-    BASE_URL = "https://fogis.svenskfotboll.se/mdk"  # Define base URL as a class constant
+    BASE_URL: str = "https://fogis.svenskfotboll.se/mdk"  # Define base URL as a class constant
     logger = logging.getLogger(__name__)
 
-    def __init__(self, username, password):
+    def __init__(self, username: str, password: str) -> None:
         """
         Initializes the FogisApiClient with login credentials.
 
@@ -63,12 +64,12 @@ class FogisApiClient:
             username (str): FOGIS username
             password (str): FOGIS password
         """
-        self.username = username
-        self.password = password
-        self.session = requests.Session()
-        self.cookies = None
+        self.username: str = username
+        self.password: str = password
+        self.session: requests.Session = requests.Session()
+        self.cookies: Optional[Dict[str, str]] = None
 
-    def login(self):
+    def login(self) -> Dict[str, str]:
         """
         Logs into the FOGIS API and stores the session cookies.
 
@@ -76,7 +77,7 @@ class FogisApiClient:
         implements lazy login and will authenticate automatically when needed.
 
         Returns:
-            dict: The session cookies if login is successful
+            Dict[str, str]: The session cookies if login is successful
 
         Raises:
             FogisLoginError: If login fails
@@ -131,17 +132,17 @@ class FogisApiClient:
             self.logger.error(f"Login request failed: {e}")
             raise FogisAPIRequestError(f"Login request failed: {e}")
 
-    def fetch_matches_list_json(self, filter=None):
+    def fetch_matches_list_json(self, filter: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
         Fetches the list of matches for the logged-in referee.
 
         Args:
-            filter (dict, optional): An OPTIONAL dictionary containing server-side
+            filter (Dict[str, Any], optional): An OPTIONAL dictionary containing server-side
                 date range filter criteria (`datumFran`, `datumTill`, `datumTyp`, `sparadDatum`).
                 Defaults to None, which fetches matches for the default date range.
 
         Returns:
-            list: A list of match dictionaries
+            List[Dict[str, Any]]: A list of match dictionaries
 
         Raises:
             FogisLoginError: If not logged in
@@ -159,7 +160,7 @@ class FogisApiClient:
             self.logger.error("Invalid response data: 'matcher' key not found")
             raise FogisDataError("Invalid response data: 'matcher' key not found")
 
-    def fetch_match_json(self, match_id: int):
+    def fetch_match_json(self, match_id: int) -> Dict[str, Any]:
         """
         Fetches detailed information for a specific match.
 
@@ -167,7 +168,7 @@ class FogisApiClient:
             match_id (int): The ID of the match to fetch
 
         Returns:
-            dict: Match details
+            Dict[str, Any]: Match details
 
         Raises:
             FogisLoginError: If not logged in
@@ -179,7 +180,7 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def fetch_match_players_json(self, match_id: int):
+    def fetch_match_players_json(self, match_id: int) -> Dict[str, Any]:
         """
         Fetches player information for a specific match.
 
@@ -187,7 +188,7 @@ class FogisApiClient:
             match_id (int): The ID of the match
 
         Returns:
-            dict: Player information for the match
+            Dict[str, Any]: Player information for the match
 
         Raises:
             FogisLoginError: If not logged in
@@ -198,7 +199,7 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def fetch_match_officials_json(self, match_id: int):
+    def fetch_match_officials_json(self, match_id: int) -> Dict[str, Any]:
         """
         Fetches officials information for a specific match.
 
@@ -206,7 +207,7 @@ class FogisApiClient:
             match_id (int): The ID of the match
 
         Returns:
-            dict: Officials information for the match
+            Dict[str, Any]: Officials information for the match
 
         Raises:
             FogisLoginError: If not logged in
@@ -217,7 +218,7 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def fetch_match_events_json(self, match_id: int):
+    def fetch_match_events_json(self, match_id: int) -> List[Dict[str, Any]]:
         """
         Fetches events information for a specific match.
 
@@ -225,7 +226,7 @@ class FogisApiClient:
             match_id (int): The ID of the match
 
         Returns:
-            dict: Events information for the match
+            List[Dict[str, Any]]: Events information for the match
 
         Raises:
             FogisLoginError: If not logged in
@@ -236,7 +237,7 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def fetch_team_players_json(self, team_id: int):
+    def fetch_team_players_json(self, team_id: int) -> List[Dict[str, Any]]:
         """
         Fetches player information for a specific team.
 
@@ -244,7 +245,7 @@ class FogisApiClient:
             team_id (int): The ID of the team
 
         Returns:
-            dict: Player information for the team
+            List[Dict[str, Any]]: Player information for the team
 
         Raises:
             FogisLoginError: If not logged in
@@ -255,7 +256,7 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def fetch_team_officials_json(self, team_id: int):
+    def fetch_team_officials_json(self, team_id: int) -> List[Dict[str, Any]]:
         """
         Fetches officials information for a specific team.
 
@@ -263,7 +264,7 @@ class FogisApiClient:
             team_id (int): The ID of the team
 
         Returns:
-            dict: Officials information for the team
+            List[Dict[str, Any]]: Officials information for the team
 
         Raises:
             FogisLoginError: If not logged in
@@ -274,15 +275,15 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def report_match_event(self, event_data):
+    def report_match_event(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Reports a match event to FOGIS.
 
         Args:
-            event_data (dict): Data for the event to report
+            event_data (Dict[str, Any]): Data for the event to report
 
         Returns:
-            dict: Response from the API
+            Dict[str, Any]: Response from the API
 
         Raises:
             FogisLoginError: If not logged in
@@ -292,7 +293,7 @@ class FogisApiClient:
 
         return self._api_request(url, event_data)
 
-    def fetch_match_result_json(self, match_id: int):
+    def fetch_match_result_json(self, match_id: int) -> Dict[str, Any]:
         """
         Fetches the list of match results in JSON format for a given match ID.
 
@@ -300,7 +301,7 @@ class FogisApiClient:
             match_id (int): The ID of the match
 
         Returns:
-            dict: Result information for the match
+            Dict[str, Any]: Result information for the match
 
         Raises:
             FogisLoginError: If not logged in
@@ -311,12 +312,12 @@ class FogisApiClient:
 
         return self._api_request(result_url, payload)
 
-    def report_match_result(self, result_data):
+    def report_match_result(self, result_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Reports match results (halftime and fulltime) to the FOGIS API.
 
         Args:
-            result_data (dict): Data containing match results. Should include:
+            result_data (Dict[str, Any]): Data containing match results. Should include:
                 - matchid (int): The ID of the match
                 - hemmamal (int): Full-time score for the home team
                 - bortamal (int): Full-time score for the away team
@@ -324,7 +325,7 @@ class FogisApiClient:
                 - halvtidBortamal (int, optional): Half-time score for the away team
 
         Returns:
-            dict: Response from the API
+            Dict[str, Any]: Response from the API
 
         Raises:
             FogisLoginError: If not logged in
@@ -391,7 +392,7 @@ class FogisApiClient:
         action_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchlagledare"
         return self._api_request(action_url, action_data)
 
-    def clear_match_events(self, match_id: int):
+    def clear_match_events(self, match_id: int) -> Dict[str, Any]:
         """
         Clear all events for a match.
 
@@ -399,7 +400,7 @@ class FogisApiClient:
             match_id (int): The ID of the match
 
         Returns:
-            dict: Response from the API
+            Dict[str, Any]: Response from the API
 
         Raises:
             FogisLoginError: If not logged in
@@ -411,7 +412,7 @@ class FogisApiClient:
             payload=payload
         )
 
-    def hello_world(self):
+    def hello_world(self) -> str:
         """
         Simple test method.
 
@@ -420,7 +421,7 @@ class FogisApiClient:
         """
         return "Hello, brave new world!"
 
-    def mark_reporting_finished(self, match_id: int):
+    def mark_reporting_finished(self, match_id: int) -> Dict[str, Any]:
         """
         Mark a match report as completed/finished in the FOGIS system.
 
@@ -431,7 +432,7 @@ class FogisApiClient:
             match_id (int): The ID of the match to mark as finished
 
         Returns:
-            dict: The response from the FOGIS API
+            Dict[str, Any]: The response from the FOGIS API
 
         Raises:
             FogisAPIRequestError: If there's an error with the API request
@@ -452,18 +453,18 @@ class FogisApiClient:
             payload=payload
         )
 
-    def _api_request(self, url, payload=None, method='POST'):
+    def _api_request(self, url: str, payload: Optional[Dict[str, Any]] = None, method: str = 'POST') -> Union[Dict[str, Any], List[Dict[str, Any]], str]:
         """
         Internal helper function to make API requests to FOGIS.
         Automatically logs in if not already authenticated.
 
         Args:
             url (str): The URL to make the request to
-            payload (dict, optional): The payload to send with the request
+            payload (Dict[str, Any], optional): The payload to send with the request
             method (str, optional): The HTTP method to use (default: 'POST')
 
         Returns:
-            dict: The response data from the API
+            Union[Dict[str, Any], List[Dict[str, Any]], str]: The response data from the API
 
         Raises:
             FogisLoginError: If login fails
