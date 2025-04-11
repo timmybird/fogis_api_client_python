@@ -89,7 +89,7 @@ For more details on the development environment, see [README.dev.md](README.dev.
 ---
 #### API Endpoints
 
-The HTTP API wrapper provides the following endpoints:
+The FOGIS API Gateway provides the following endpoints:
 
 ##### Basic Endpoints
 - `GET /` - Returns a test JSON response

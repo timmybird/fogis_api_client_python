@@ -1,5 +1,5 @@
 """
-OpenAPI/Swagger documentation for the FOGIS API Client HTTP Wrapper.
+OpenAPI/Swagger documentation for the FOGIS API Gateway.
 """
 
 import os
@@ -868,7 +868,7 @@ spec.path(
 # Function to get the Swagger UI blueprint
 def get_swagger_blueprint():
     """
-    Returns the Swagger UI blueprint for the FOGIS API Client HTTP Wrapper.
+    Returns the Swagger UI blueprint for the FOGIS API Gateway.
     """
     SWAGGER_URL = '/api/docs'  # URL for exposing Swagger UI
     API_URL = '/api/swagger.json'  # URL for the API spec
