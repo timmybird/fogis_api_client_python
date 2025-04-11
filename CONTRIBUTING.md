@@ -154,6 +154,53 @@ We follow a modified GitFlow workflow to ensure that the main branch is always i
 - Group changes by type: Added, Changed, Deprecated, Removed, Fixed, Security
 - Reference PR numbers and contributors
 
+## Working with AI Assistants
+
+When using AI assistants (like GitHub Copilot, Claude, ChatGPT, etc.) to help with development:
+
+### For Human Developers
+
+1. **Explicitly Instruct the AI**:
+   - Ask the AI to read and follow the CONTRIBUTING.md guidelines
+   - Provide the repository URL or paste relevant sections of the guidelines
+   - Specify which branch to use as the base (usually develop, not main)
+
+2. **Review AI-Generated Code Carefully**:
+   - Ensure it follows the project's coding standards
+   - Verify it includes appropriate tests
+   - Check that it maintains backward compatibility
+   - Look for potential edge cases the AI might have missed
+
+3. **Follow the Same Process**:
+   - AI-assisted code should go through the same PR process
+   - Don't use AI to bypass code review or testing
+
+### For AI Assistants
+
+If you are an AI assistant reading this:
+
+1. **Follow the GitFlow Process**:
+   - Create branches from develop, not main
+   - Use the correct branch naming conventions
+   - Suggest squash merging for feature/fix branches
+
+2. **Maintain Code Quality**:
+   - Add comprehensive tests for all new code
+   - Include proper type hints
+   - Follow the project's coding style
+   - Document all public methods and functions
+
+3. **Preserve Critical Functionality**:
+   - Be cautious when modifying existing code
+   - Ensure backward compatibility
+   - Add regression tests for modified functionality
+   - Verify that API endpoints still work as expected
+
+4. **Remind Users of the Process**:
+   - If a user asks you to push directly to main, remind them of the GitFlow process
+   - Suggest creating a proper branch and PR instead
+   - Reference this document when explaining the process
+
 ## Getting Help
 
 If you have questions or need help with the contribution process:
