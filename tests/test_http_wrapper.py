@@ -6,12 +6,12 @@ import sys
 from flask import Flask
 from flask.testing import FlaskClient
 
-# Import the Flask app from the HTTP wrapper
+# Import the Flask app from the API Gateway
 import fogis_api_client_http_wrapper
 
 
 class TestHttpWrapper(unittest.TestCase):
-    """Test cases for the HTTP wrapper."""
+    """Test cases for the API Gateway."""
 
     def setUp(self):
         """Set up test fixtures."""
@@ -25,6 +25,7 @@ class TestHttpWrapper(unittest.TestCase):
         fogis_api_client_http_wrapper.client = self.mock_fogis_client
 
         # Set up mock responses
+        self.mock_fogis_client.hello_world.return_value = "Hello, brave new world!"
         self.mock_fogis_client.fetch_matches_list_json.return_value = [{"id": "1", "home_team": "Team A", "away_team": "Team B"}]
         self.mock_fogis_client.fetch_match_json.return_value = {"id": "123", "home_team": "Team A", "away_team": "Team B", "events": [{"id": "1", "type": "goal"}]}
         self.mock_fogis_client.fetch_match_result_json.return_value = {"id": "123", "home_score": 2, "away_score": 1}
@@ -36,22 +37,18 @@ class TestHttpWrapper(unittest.TestCase):
         self.mock_fogis_client.clear_match_events.return_value = {"status": "success"}
         self.mock_fogis_client.mark_reporting_finished.return_value = {"success": True}
 
-    def test_health_endpoint(self):
-        """Test the /health endpoint."""
-        response = self.client.get('/health')
+    def test_hello_endpoint(self):
+        """Test the /hello endpoint."""
+        response = self.client.get('/hello')
         self.assertEqual(response.status_code, 200)
-        self.assertIn('status', response.json)
-        self.assertIn('timestamp', response.json)
-        self.assertIn('service', response.json)
-        self.assertEqual(response.json['status'], 'healthy')
-        self.assertEqual(response.json['service'], 'fogis-api-client')
+        self.assertEqual(response.json, {"message": "Hello, brave new world!"})
 
     def test_index_endpoint(self):
         """Test the root endpoint."""
         response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json, dict)
-        self.assertEqual(response.json, {"status": "ok", "message": "Fogis API Client HTTP Wrapper"})
+        self.assertEqual(response.json, {"status": "ok", "message": "FOGIS API Gateway"})
 
     @patch('fogis_api_client_http_wrapper.client.fetch_matches_list_json')
     def test_matches_endpoint(self, mock_fetch):

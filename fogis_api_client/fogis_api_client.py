@@ -7,6 +7,7 @@ from datetime import datetime
 import time
 import os
 from urllib.parse import urlparse, parse_qs
+from typing import Dict, List, Any, Optional, Union, Tuple, cast
 
 # Event types dictionary for match events
 event_types = {  # Consistent Integer Keys for ALL event types (where applicable)
@@ -159,12 +160,12 @@ class FogisApiClient:
             self.logger.error("Invalid response data: 'matcher' key not found")
             raise FogisDataError("Invalid response data: 'matcher' key not found")
 
-    def fetch_match_json(self, match_id: int):
+    def fetch_match_json(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
         Fetches detailed information for a specific match.
 
         Args:
-            match_id (int): The ID of the match to fetch
+            match_id (Union[str, int]): The ID of the match to fetch
 
         Returns:
             dict: Match details
@@ -179,12 +180,12 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def fetch_match_players_json(self, match_id: int):
+    def fetch_match_players_json(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
         Fetches player information for a specific match.
 
         Args:
-            match_id (int): The ID of the match
+            match_id (Union[str, int]): The ID of the match
 
         Returns:
             dict: Player information for the match
@@ -198,12 +199,12 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def fetch_match_officials_json(self, match_id: int):
+    def fetch_match_officials_json(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
         Fetches officials information for a specific match.
 
         Args:
-            match_id (int): The ID of the match
+            match_id (Union[str, int]): The ID of the match
 
         Returns:
             dict: Officials information for the match
@@ -217,12 +218,12 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def fetch_match_events_json(self, match_id: int):
+    def fetch_match_events_json(self, match_id: Union[str, int]) -> List[Dict[str, Any]]:
         """
         Fetches events information for a specific match.
 
         Args:
-            match_id (int): The ID of the match
+            match_id (Union[str, int]): The ID of the match
 
         Returns:
             dict: Events information for the match
@@ -236,12 +237,12 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def fetch_team_players_json(self, team_id: int):
+    def fetch_team_players_json(self, team_id: Union[str, int]) -> List[Dict[str, Any]]:
         """
         Fetches player information for a specific team.
 
         Args:
-            team_id (int): The ID of the team
+            team_id (Union[str, int]): The ID of the team
 
         Returns:
             dict: Player information for the team
@@ -255,12 +256,12 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def fetch_team_officials_json(self, team_id: int):
+    def fetch_team_officials_json(self, team_id: Union[str, int]) -> List[Dict[str, Any]]:
         """
         Fetches officials information for a specific team.
 
         Args:
-            team_id (int): The ID of the team
+            team_id (Union[str, int]): The ID of the team
 
         Returns:
             dict: Officials information for the team
@@ -292,12 +293,12 @@ class FogisApiClient:
 
         return self._api_request(url, event_data)
 
-    def fetch_match_result_json(self, match_id: int):
+    def fetch_match_result_json(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
         Fetches the list of match results in JSON format for a given match ID.
 
         Args:
-            match_id (int): The ID of the match
+            match_id (Union[str, int]): The ID of the match
 
         Returns:
             dict: Result information for the match
@@ -391,12 +392,12 @@ class FogisApiClient:
         action_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchlagledare"
         return self._api_request(action_url, action_data)
 
-    def clear_match_events(self, match_id: int):
+    def clear_match_events(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
         Clear all events for a match.
 
         Args:
-            match_id (int): The ID of the match
+            match_id (Union[str, int]): The ID of the match
 
         Returns:
             dict: Response from the API
@@ -420,7 +421,7 @@ class FogisApiClient:
         """
         return "Hello, brave new world!"
 
-    def mark_reporting_finished(self, match_id: int):
+    def mark_reporting_finished(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
         Mark a match report as completed/finished in the FOGIS system.
 
@@ -428,7 +429,7 @@ class FogisApiClient:
         the match report and submits it officially.
 
         Args:
-            match_id (int): The ID of the match to mark as finished
+            match_id (Union[str, int]): The ID of the match to mark as finished
 
         Returns:
             dict: The response from the FOGIS API
