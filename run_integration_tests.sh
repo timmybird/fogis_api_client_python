@@ -31,7 +31,7 @@ if ! docker ps | grep -q fogis-api-client-dev; then
 
     # Try to manually check if the service is responding
     echo "Checking if API service is responding..."
-    docker exec fogis-api-client-dev curl -v http://localhost:8080/ || echo "Initial curl check failed, but continuing..."
+    curl -s http://localhost:8080/ || echo "Initial curl check failed, but continuing..."
 
     while ! docker ps | grep -q "fogis-api-client-dev.*healthy"; do
         CURRENT_TIME=$(date +%s)
@@ -44,7 +44,7 @@ if ! docker ps | grep -q fogis-api-client-dev; then
             echo "Container status:"
             docker ps | grep fogis-api-client-dev
             echo "Trying to access the API directly:"
-            docker exec fogis-api-client-dev curl -v http://localhost:8080/ || echo "Curl check failed"
+            curl -s http://localhost:8080/ || echo "Curl check failed"
 
             # Try to restart the container
             echo "Attempting to restart the container..."
