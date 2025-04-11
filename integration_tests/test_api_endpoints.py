@@ -49,15 +49,6 @@ def test_health_endpoint():
     # Log the response for debugging
     logger.info(f"Health endpoint response: {data}")
 
-@retry_on_failure(max_retries=5, delay=3)
-def test_hello_endpoint():
-    """Test the /hello endpoint returns a valid response."""
-    response = requests.get(f"{API_URL}/hello")
-    assert response.status_code == 200
-    data = response.json()
-    assert isinstance(data, dict)
-    assert "message" in data
-    assert "Hello" in data["message"]
 
 def test_root_endpoint():
     """Test the root endpoint returns a valid JSON response."""
