@@ -26,7 +26,7 @@ if ! docker ps | grep -q fogis-api-client-dev; then
 
     # Wait for the service to be healthy with a timeout
     echo "Waiting for API service to be healthy..."
-    TIMEOUT=300  # 5 minutes timeout
+    TIMEOUT=120  # 2 minutes timeout
     START_TIME=$(date +%s)
 
     # Try to manually check if the service is responding
@@ -42,8 +42,16 @@ if ! docker ps | grep -q fogis-api-client-dev; then
     while true; do
         # Check if container is healthy
         if docker ps | grep -q "fogis-api-client-dev.*healthy"; then
-            echo "Container is healthy! Proceeding with tests."
-            break
+            echo "Container is healthy! Checking if API is responding..."
+
+            # Check if API is responding correctly
+            API_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health)
+            if [ "$API_RESPONSE" = "200" ]; then
+                echo "API is responding correctly! Proceeding with tests."
+                break
+            else
+                echo "Container is healthy but API returned status $API_RESPONSE. Waiting for API to be fully ready..."
+            fi
         fi
         CURRENT_TIME=$(date +%s)
         ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
