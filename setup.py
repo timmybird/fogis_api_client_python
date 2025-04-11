@@ -22,6 +22,10 @@ setuptools.setup(
     install_requires=[
         "requests",
         "beautifulsoup4",
+        "flask",
+        "apispec>=6.0.0",
+        "flask-swagger-ui",
+        "marshmallow",
     ],
     extras_require={
         'dev': [
@@ -29,6 +33,7 @@ setuptools.setup(
             'pytest-mock',
             'pytest-cov',
             'flake8',
+            'flask-cors',
         ],
     },
     include_package_data=True,

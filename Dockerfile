@@ -4,6 +4,9 @@ FROM python:3.9-slim-buster
 # Set the working directory inside the container
 WORKDIR /app
 
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 COPY . .
 
 # Install fogis_api_client in editable mode

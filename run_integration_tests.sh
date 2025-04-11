@@ -31,24 +31,47 @@ if ! docker ps | grep -q fogis-api-client-dev; then
 
     # Try to manually check if the service is responding
     echo "Checking if API service is responding..."
-    docker exec fogis-api-client-dev curl -v http://localhost:8080/ || echo "Initial curl check failed, but continuing..."
+    echo "Docker container status:"
+    docker ps
+    echo "Docker container logs:"
+    docker logs fogis-api-client-dev
+    echo "Trying to access API from host:"
+    curl -v http://localhost:8080/ || echo "Initial curl check failed, but continuing..."
 
-    while ! docker ps | grep -q "fogis-api-client-dev.*healthy"; do
+    # Check container status every 5 seconds
+    while true; do
+        # Check if container is healthy
+        if docker ps | grep -q "fogis-api-client-dev.*healthy"; then
+            echo "Container is healthy! Proceeding with tests."
+            break
+        fi
         CURRENT_TIME=$(date +%s)
         ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+
+        # Check container status in more detail
+        echo "Current container status:"
+        docker ps | grep fogis-api-client-dev || echo "Container not found!"
+
+        # Try to access the API directly
+        echo "Trying to access the API directly:"
+        curl -v http://localhost:8080/ || echo "Curl check failed"
+
+        # Check if the container is running but unhealthy
+        if docker ps | grep -q "fogis-api-client-dev.*unhealthy"; then
+            echo "Container is unhealthy. Checking logs:"
+            docker logs fogis-api-client-dev --tail 20
+        fi
 
         if [ $ELAPSED_TIME -gt $TIMEOUT ]; then
             echo "Timeout waiting for API service to become healthy after $TIMEOUT seconds."
             echo "Checking container logs for errors:"
             docker logs fogis-api-client-dev
             echo "Container status:"
-            docker ps | grep fogis-api-client-dev
-            echo "Trying to access the API directly:"
-            docker exec fogis-api-client-dev curl -v http://localhost:8080/ || echo "Curl check failed"
+            docker ps | grep fogis-api-client-dev || echo "Container not found!"
 
             # Try to restart the container
             echo "Attempting to restart the container..."
-            docker restart fogis-api-client-dev
+            docker restart fogis-api-client-dev || echo "Failed to restart container"
             sleep 10
 
             # Check if it's healthy now
@@ -64,6 +87,11 @@ if ! docker ps | grep -q fogis-api-client-dev; then
         echo "Still waiting... ($ELAPSED_TIME seconds elapsed)"
         sleep 5
     done
+
+    # Final check to confirm API is responding
+    echo "Final API check before proceeding:"
+    curl -v http://localhost:8080/
+    echo ""
 fi
 
 # Run the integration tests
