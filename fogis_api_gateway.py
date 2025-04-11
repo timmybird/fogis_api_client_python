@@ -99,15 +99,6 @@ def health():
         })
 
 
-@app.route("/hello")
-def hello():
-    """
-    Test endpoint that calls the hello_world method of the Fogis API Client.
-    """
-    if not client_initialized:
-        return jsonify({"message": "FOGIS API client not initialized, but hello endpoint is still working!"})
-    return jsonify({"message": client.hello_world()})
-
 
 @app.route("/matches")
 def matches():
