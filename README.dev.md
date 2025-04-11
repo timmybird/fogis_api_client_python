@@ -27,8 +27,18 @@ We provide a Docker-based development environment that makes it easy to develop 
    FLASK_DEBUG=1
    ```
 
-3. Start the development environment:
+3. Install development dependencies:
+   ```bash
+   pip install -r requirements-dev.txt
    ```
+
+4. Set up pre-commit hooks:
+   ```bash
+   pre-commit install
+   ```
+
+5. Start the development environment:
+   ```bash
    ./dev.sh
    ```
 
@@ -38,7 +48,7 @@ We provide a Docker-based development environment that makes it easy to develop 
    - Mount your local code into the container for live reloading
    - Show the logs from the container
 
-4. Access the API at http://localhost:8080
+6. Access the API at http://localhost:8080
 
 ### Running Integration Tests
 
@@ -57,8 +67,19 @@ This will:
 
 1. Make changes to the code
 2. The Flask server will automatically reload when you change Python files
-3. Run the integration tests to verify your changes
-4. Commit your changes when ready
+3. Run the unit tests to verify your changes:
+   ```bash
+   python -m unittest discover tests
+   ```
+4. Run the integration tests to verify your changes:
+   ```bash
+   python -m pytest integration_tests
+   ```
+5. Run pre-commit hooks to ensure code quality:
+   ```bash
+   pre-commit run --all-files
+   ```
+6. Commit your changes when ready
 
 ### Docker Compose Configuration
 
@@ -80,7 +101,24 @@ The development environment uses `docker-compose.dev.yml`, which includes:
 
 ## Contributing
 
-1. Create a feature branch
+1. Create a feature branch from develop:
+   ```bash
+   git checkout -b feature/your-feature-name develop
+   ```
+
 2. Make your changes
-3. Run the tests
-4. Submit a pull request
+
+3. Run the tests:
+   ```bash
+   python -m unittest discover tests
+   python -m pytest integration_tests
+   ```
+
+4. Run pre-commit hooks:
+   ```bash
+   pre-commit run --all-files
+   ```
+
+5. Push your branch and submit a pull request
+
+For more detailed guidelines, please see [CONTRIBUTING.md](CONTRIBUTING.md).

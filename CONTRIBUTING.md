@@ -35,11 +35,16 @@ We follow a modified GitFlow workflow to ensure that the main branch is always i
 1. Create a branch from develop: `git checkout -b feature/name develop`
 2. Make your changes
 3. Write or update tests for your changes
-4. Run all tests locally: `python -m unittest discover tests`
-5. Push your branch: `git push -u origin feature/name`
-6. Create a PR to merge into develop
-7. After review and approval, squash-merge into develop
-8. Delete the feature branch
+4. Run all tests locally:
+   ```bash
+   python -m unittest discover tests
+   python -m pytest integration_tests
+   ```
+5. Ensure pre-commit hooks pass: `pre-commit run --all-files`
+6. Push your branch: `git push -u origin feature/name`
+7. Create a PR to merge into develop
+8. After review and approval, squash-merge into develop
+9. Delete the feature branch
 
 #### For Releases:
 1. When develop has enough features for a release, create a release branch: `git checkout -b release/x.y.z develop`
@@ -118,15 +123,59 @@ We follow a modified GitFlow workflow to ensure that the main branch is always i
 - Tests should be independent and repeatable
 
 ### Running Tests
-- Run all tests before submitting a PR: `python -m unittest discover tests`
-- Ensure all tests pass in your local environment
-- Fix any failing tests before submitting your PR
+
+Before submitting a pull request, please ensure all tests pass:
+
+1. **Run unit tests**:
+   ```bash
+   python -m unittest discover tests
+   ```
+
+2. **Run integration tests**:
+   ```bash
+   python -m pytest integration_tests
+   ```
+
+3. **When adding new features or modifying existing ones**:
+   - Add or update unit tests in the `tests/` directory
+   - Add or update integration tests in the `integration_tests/` directory
+   - Ensure test coverage for both success and error cases
+
+### Test Coverage Guidelines
+
+- **Endpoint Changes**: If you add, modify, or remove an API endpoint, update all corresponding tests
+- **Feature Changes**: Add tests for new features and update tests for modified features
+- **Bug Fixes**: Add a test that reproduces the bug and verifies the fix
 
 ### Test Structure
 - Unit tests for individual functions and methods
 - Integration tests for API endpoints
 - Regression tests for critical functionality
 - Mock external dependencies when appropriate
+
+### Pre-commit Hooks
+
+We use pre-commit hooks to automate testing and code quality checks. This helps catch issues early and ensures consistent code quality.
+
+1. Install pre-commit:
+   ```bash
+   pip install pre-commit
+   ```
+
+2. Install the hooks:
+   ```bash
+   pre-commit install
+   ```
+
+3. The hooks will now run automatically before each commit
+
+Pre-commit hooks will:
+- Format your code with Black and isort
+- Check for common issues with flake8
+- Verify type hints with mypy
+- Run unit tests to ensure they pass
+
+If any checks fail, the commit will be blocked until you fix the issues.
 
 ## API Changes
 
@@ -183,12 +232,14 @@ If you are an AI assistant reading this:
    - Create branches from develop, not main
    - Use the correct branch naming conventions
    - Suggest squash merging for feature/fix branches
+   - Recommend running pre-commit hooks before pushing changes
 
 2. **Maintain Code Quality**:
-   - Add comprehensive tests for all new code
+   - Add comprehensive tests for all new code (both unit and integration tests)
    - Include proper type hints
    - Follow the project's coding style
    - Document all public methods and functions
+   - Ensure code passes all pre-commit hooks
 
 3. **Preserve Critical Functionality**:
    - Be cautious when modifying existing code
