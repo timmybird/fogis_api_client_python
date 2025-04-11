@@ -23,7 +23,13 @@ debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
 
 # Initialize the Fogis API client but don't login yet
 # Login will happen automatically when needed (lazy login)
-client = FogisApiClient(fogis_username, fogis_password)
+try:
+    client = FogisApiClient(fogis_username, fogis_password)
+    client_initialized = True
+except Exception as e:
+    logger.error(f"Failed to initialize FogisApiClient: {e}")
+    client = None
+    client_initialized = False
 
 # Configure logging
 logging.basicConfig(
@@ -98,6 +104,8 @@ def hello():
     """
     Test endpoint that calls the hello_world method of the Fogis API Client.
     """
+    if not client_initialized:
+        return jsonify({"message": "FOGIS API client not initialized, but hello endpoint is still working!"})
     return jsonify({"message": client.hello_world()})
 
 
