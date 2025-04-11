@@ -4,31 +4,71 @@ Thank you for your interest in contributing to fogis_api_client! This document o
 
 ## Git Workflow
 
-### 1. Never Push Directly to Main
+We follow a modified GitFlow workflow to ensure that the main branch is always in a releasable state.
+
+### 1. Branch Structure
+
+- **main**: Production-ready code. Always stable and releasable.
+- **develop**: Integration branch for features. Contains code for the next release.
+- **feature/***:  Feature branches for new functionality.
+- **fix/***:  Bug fix branches for issues.
+- **release/***:  Release preparation branches.
+- **hotfix/***:  Emergency fixes for production issues.
+
+### 2. Never Push Directly to Main or Develop
 - All changes must go through pull requests
-- The main branch is protected and requires PR review
+- The main and develop branches are protected and require PR review
 - This ensures code quality and prevents accidental breaking changes
 
-### 2. Branch Naming Convention
-- `feature/descriptive-name` for new features
-- `fix/issue-description` for bug fixes
-- `docs/what-is-documented` for documentation changes
-- `refactor/what-is-refactored` for code refactoring
-- `test/what-is-tested` for adding or updating tests
+### 3. Branch Naming Convention
+- `feature/descriptive-name` for new features (branch from develop)
+- `fix/issue-description` for bug fixes (branch from develop)
+- `docs/what-is-documented` for documentation changes (branch from develop)
+- `refactor/what-is-refactored` for code refactoring (branch from develop)
+- `test/what-is-tested` for adding or updating tests (branch from develop)
+- `release/x.y.z` for release preparation (branch from develop)
+- `hotfix/issue-description` for urgent production fixes (branch from main)
 
-### 3. Pull Request Process
-1. Create a branch from main: `git checkout -b branch-name main`
+### 4. GitFlow Process
+
+#### For Features and Bug Fixes:
+1. Create a branch from develop: `git checkout -b feature/name develop`
 2. Make your changes
 3. Write or update tests for your changes
 4. Run all tests locally: `python -m unittest discover tests`
-5. Push your branch: `git push -u origin branch-name`
-6. Create a PR through GitHub
-7. Wait for CI/CD to pass
-8. Get at least one review
-9. Squash-merge to main
-10. Delete the branch after merging
+5. Push your branch: `git push -u origin feature/name`
+6. Create a PR to merge into develop
+7. After review and approval, squash-merge into develop
+8. Delete the feature branch
 
-### 4. Commit Message Guidelines
+#### For Releases:
+1. When develop has enough features for a release, create a release branch: `git checkout -b release/x.y.z develop`
+2. Update version numbers and perform final testing
+3. Create a PR to merge into main
+4. After review and approval, merge into main (no squash)
+5. Tag the release on main: `git tag -a vx.y.z -m "Version x.y.z"`
+6. Merge the release branch back into develop: `git checkout develop && git merge release/x.y.z`
+7. Delete the release branch
+
+#### For Hotfixes:
+1. Create a hotfix branch from main: `git checkout -b hotfix/issue main`
+2. Fix the issue and update version number (patch increment)
+3. Create a PR to merge into main
+4. After review and approval, merge into main (no squash)
+5. Tag the hotfix on main: `git tag -a vx.y.z -m "Hotfix x.y.z"`
+6. Merge the hotfix into develop as well: `git checkout develop && git merge hotfix/issue`
+7. Delete the hotfix branch
+
+### 5. Pull Request Process
+1. Create a PR through GitHub
+2. Fill out the PR template completely
+3. Wait for CI/CD to pass
+4. Get at least one review
+5. Address any feedback
+6. Merge according to the branch type (squash for features/fixes, no squash for releases/hotfixes)
+7. Delete the branch after merging
+
+### 6. Commit Message Guidelines
 - Use the format: `Type: Short description`
 - Types: `Fix`, `Feature`, `Docs`, `Style`, `Refactor`, `Test`, `Chore`
 - Example: `Fix: Ensure proper payload structure in fetch_matches_list_json`
@@ -52,10 +92,10 @@ Thank you for your interest in contributing to fogis_api_client! This document o
   def fetch_match_json(self, match_id: int) -> dict:
       """
       Fetches match information.
-      
+
       Args:
           match_id (int): The ID of the match
-          
+
       Returns:
           dict: Match information
       """
