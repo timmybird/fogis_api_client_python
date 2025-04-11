@@ -39,7 +39,12 @@ if ! docker ps | grep -q fogis-api-client-dev; then
     curl -v http://localhost:8080/ || echo "Initial curl check failed, but continuing..."
 
     # Check container status every 5 seconds
-    while ! docker ps | grep -q "fogis-api-client-dev.*healthy"; do
+    while true; do
+        # Check if container is healthy
+        if docker ps | grep -q "fogis-api-client-dev.*healthy"; then
+            echo "Container is healthy! Proceeding with tests."
+            break
+        fi
         CURRENT_TIME=$(date +%s)
         ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
 
@@ -82,6 +87,11 @@ if ! docker ps | grep -q fogis-api-client-dev; then
         echo "Still waiting... ($ELAPSED_TIME seconds elapsed)"
         sleep 5
     done
+
+    # Final check to confirm API is responding
+    echo "Final API check before proceeding:"
+    curl -v http://localhost:8080/
+    echo ""
 fi
 
 # Run the integration tests
