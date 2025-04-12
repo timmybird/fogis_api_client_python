@@ -1,7 +1,8 @@
 import unittest
-from unittest.mock import patch, MagicMock
-import json
+from unittest.mock import MagicMock, patch
+
 import requests
+
 from fogis_api_client.fogis_api_client import FogisApiClient, FogisLoginError
 
 
@@ -12,7 +13,7 @@ class TestCookieAuth(unittest.TestCase):
         """Set up test fixtures."""
         self.test_cookies = {
             "FogisMobilDomarKlient.ASPXAUTH": "test_auth_cookie",
-            "ASP.NET_SessionId": "test_session_id"
+            "ASP.NET_SessionId": "test_session_id",
         }
 
     def test_init_with_cookies(self):
@@ -34,7 +35,7 @@ class TestCookieAuth(unittest.TestCase):
         with self.assertRaises(ValueError):
             FogisApiClient()
 
-    @patch('requests.Session.post')
+    @patch("requests.Session.post")
     def test_login_with_cookies(self, mock_post):
         """Test login method when client is initialized with cookies."""
         client = FogisApiClient(cookies=self.test_cookies)
@@ -50,14 +51,20 @@ class TestCookieAuth(unittest.TestCase):
 
         # Create mock responses
         mock_get_response = MagicMock()
-        mock_get_response.text = '<input name="__VIEWSTATE" value="test_viewstate" /><input name="__EVENTVALIDATION" value="test_eventvalidation" />'
+        mock_get_response.text = (
+            '<input name="__VIEWSTATE" value="test_viewstate" />'
+            '<input name="__EVENTVALIDATION" value="test_eventvalidation" />'
+        )
         mock_get_response.raise_for_status = lambda: None
 
         mock_post_response = MagicMock()
         mock_post_response.raise_for_status = lambda: None
 
         # Create mock cookies
-        mock_cookies = {"FogisMobilDomarKlient.ASPXAUTH": "test_auth_cookie", "ASP.NET_SessionId": "test_session_id"}
+        mock_cookies = {
+            "FogisMobilDomarKlient.ASPXAUTH": "test_auth_cookie",
+            "ASP.NET_SessionId": "test_session_id",
+        }
 
         # Define mock methods
         def mock_get(self, url, **kwargs):
@@ -86,7 +93,7 @@ class TestCookieAuth(unittest.TestCase):
             requests.Session.get = original_get
             requests.Session.post = original_post
 
-    @patch('fogis_api_client.fogis_api_client.FogisApiClient._api_request')
+    @patch("fogis_api_client.fogis_api_client.FogisApiClient._api_request")
     def test_validate_cookies_valid(self, mock_api_request):
         """Test validate_cookies method with valid cookies."""
         mock_api_request.return_value = {"matcher": []}
@@ -97,7 +104,7 @@ class TestCookieAuth(unittest.TestCase):
         self.assertTrue(result)
         mock_api_request.assert_called_once()
 
-    @patch('fogis_api_client.fogis_api_client.FogisApiClient._api_request')
+    @patch("fogis_api_client.fogis_api_client.FogisApiClient._api_request")
     def test_validate_cookies_invalid(self, mock_api_request):
         """Test validate_cookies method with invalid cookies."""
         mock_api_request.side_effect = FogisLoginError("Invalid session")
@@ -127,8 +134,8 @@ class TestCookieAuth(unittest.TestCase):
         # Create a mock for the _api_request method that returns a valid response
         original_api_request = FogisApiClient._api_request
 
-        def mock_api_request(self, url, payload=None, method='POST'):
-            if url.endswith('HamtaMatchLista'):
+        def mock_api_request(self, url, payload=None, method="POST"):
+            if url.endswith("HamtaMatchLista"):
                 return {"matcher": []}  # Return a valid response with the 'matcher' key
             return {"test": "data"}
 
@@ -145,5 +152,5 @@ class TestCookieAuth(unittest.TestCase):
             FogisApiClient._api_request = original_api_request
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
