@@ -156,7 +156,7 @@ def matches():
         if limit:
             try:
                 limit = int(limit)
-                matches_list = matches_list[offset : offset + limit]
+                matches_list = matches_list[offset:offset + limit]
             except ValueError:
                 pass  # Ignore invalid limit values
         elif offset > 0:
@@ -270,7 +270,7 @@ def match_events(match_id):
         if limit:
             try:
                 limit = int(limit)
-                events_data = events_data[offset : offset + limit]
+                events_data = events_data[offset:offset + limit]
             except ValueError:
                 pass  # Ignore invalid limit values
         elif offset > 0:
@@ -373,7 +373,7 @@ def team_players(team_id):
         if limit:
             try:
                 limit = int(limit)
-                players_data = players_data[offset : offset + limit]
+                players_data = players_data[offset:offset + limit]
             except ValueError:
                 pass  # Ignore invalid limit values
         elif offset > 0:
@@ -430,7 +430,7 @@ def team_officials(team_id):
         if limit:
             try:
                 limit = int(limit)
-                officials_data = officials_data[offset : offset + limit]
+                officials_data = officials_data[offset:offset + limit]
             except ValueError:
                 pass  # Ignore invalid limit values
         elif offset > 0:

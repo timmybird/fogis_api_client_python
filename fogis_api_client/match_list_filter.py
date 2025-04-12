@@ -8,8 +8,10 @@ class MatchListFilter:
     """
     A class for building and applying filters to lists of matches fetched from the Fogis API.
 
-    This class combines filter configuration and application logic for both server-side and client-side filtering.
-    It provides a fluent API (chainable methods) for building complex filter criteria and fetching filtered matches.
+    This class combines filter configuration and application logic for both server-side
+    and client-side filtering.
+    It provides a fluent API (chainable methods) for building complex filter criteria
+    and fetching filtered matches.
     """
 
     def __init__(self):
@@ -46,6 +48,7 @@ class MatchListFilter:
 
     def saved_datum(self, saved_datum: str) -> "MatchListFilter":
         """Sets the saved date for filter (likely not server-side, but included for completeness)."""
+
         self._sparad_datum = saved_datum
         return self
 
@@ -90,10 +93,14 @@ class MatchListFilter:
         return self
 
     def build_payload(self) -> Dict[str, Any]:
-        """Builds the MINIMAL filter payload dictionary, including ONLY server-side criteria that are actually configured.
+        """Builds the MINIMAL filter payload dictionary.
 
-        Date range, status, alderskategori, and kon filters are now COMPLETELY OMITTED from the default server-side payload
-        if they are not explicitly configured using the builder methods, for maximum efficiency and API clarity.
+        Includes ONLY server-side criteria that are actually configured.
+
+        Date range, status, alderskategori, and kon filters are COMPLETELY OMITTED
+        from the default server-side payload
+        if they are not explicitly configured using the builder methods,
+        for maximum efficiency and API clarity.
         """
         payload_filter: Dict[str, Any] = {}
 

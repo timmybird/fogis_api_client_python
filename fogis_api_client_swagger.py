@@ -567,7 +567,7 @@ spec.path(
                             "properties": {
                                 "type": {
                                     "type": "string",
-                                    "description": "Event type (e.g., 'goal', 'card', 'substitution')",
+                                    "description": "Event type (e.g., 'goal', 'card')",
                                 },
                                 "player": {"type": "string", "description": "Player name"},
                                 "team": {"type": "string", "description": "Team name"},
