@@ -1,11 +1,11 @@
-import unittest
-from unittest.mock import patch, MagicMock, Mock
-import requests
-import json
-import logging
 import io
+import logging
+import unittest
+from unittest.mock import MagicMock, Mock
 
-from fogis_api_client.fogis_api_client import FogisApiClient, FogisLoginError, FogisAPIRequestError, FogisDataError
+import requests
+
+from fogis_api_client.fogis_api_client import FogisApiClient, FogisAPIRequestError, FogisLoginError
 
 
 class MockResponse:
@@ -42,12 +42,14 @@ class TestFogisApiClient(unittest.TestCase):
         mock_session.cookies.set = MagicMock()
 
         self.client.session = mock_session
-        self.client.cookies = {'FogisMobilDomarKlient.ASPXAUTH': 'mock_auth_cookie'}  # Simulate being logged in
+        self.client.cookies = {
+            "FogisMobilDomarKlient.ASPXAUTH": "mock_auth_cookie"
+        }  # Simulate being logged in
 
         # Set up logging capture
         self.log_capture = io.StringIO()
         self.log_handler = logging.StreamHandler(self.log_capture)
-        self.logger = logging.getLogger('fogis_api_client.fogis_api_client')
+        self.logger = logging.getLogger("fogis_api_client.fogis_api_client")
         self.logger.addHandler(self.log_handler)
         self.logger.setLevel(logging.INFO)
 
@@ -67,7 +69,10 @@ class TestFogisApiClient(unittest.TestCase):
 
         # Mock the get response to return a valid login page
         mock_get_response = Mock()
-        mock_get_response.text = '<input name="__VIEWSTATE" value="viewstate_value" /><input name="__EVENTVALIDATION" value="eventvalidation_value" />'
+        mock_get_response.text = (
+            '<input name="__VIEWSTATE" value="viewstate_value" />'
+            '<input name="__EVENTVALIDATION" value="eventvalidation_value" />'
+        )
         mocked_session.get.return_value = mock_get_response
 
         # Mock the post response to simulate successful login
@@ -75,13 +80,13 @@ class TestFogisApiClient(unittest.TestCase):
         mocked_session.post.return_value = mock_post_response
 
         # Mock the cookies to simulate successful login
-        mocked_session.cookies = {'FogisMobilDomarKlient.ASPXAUTH': 'mock_auth_cookie'}
+        mocked_session.cookies = {"FogisMobilDomarKlient.ASPXAUTH": "mock_auth_cookie"}
 
         # Call login
         cookies = client.login()
 
         # Verify the result
-        self.assertEqual(cookies, {'FogisMobilDomarKlient.ASPXAUTH': 'mock_auth_cookie'})
+        self.assertEqual(cookies, {"FogisMobilDomarKlient.ASPXAUTH": "mock_auth_cookie"})
         mocked_session.get.assert_called_once()
         mocked_session.post.assert_called_once()
 
@@ -96,7 +101,10 @@ class TestFogisApiClient(unittest.TestCase):
 
         # Mock the get response to return a valid login page
         mock_get_response = Mock()
-        mock_get_response.text = '<input name="__VIEWSTATE" value="viewstate_value" /><input name="__EVENTVALIDATION" value="eventvalidation_value" />'
+        mock_get_response.text = (
+            '<input name="__VIEWSTATE" value="viewstate_value" />'
+            '<input name="__EVENTVALIDATION" value="eventvalidation_value" />'
+        )
         mocked_session.get.return_value = mock_get_response
 
         # Mock the post response to simulate failed login
@@ -125,7 +133,7 @@ class TestFogisApiClient(unittest.TestCase):
         mock_session_instance.post.return_value = mock_api_response
 
         # Call _api_request
-        response_data = self.client._api_request(url, payload, method='POST')
+        response_data = self.client._api_request(url, payload, method="POST")
 
         # Verify the result
         self.assertEqual(response_data, {"key": "value"})
@@ -133,13 +141,13 @@ class TestFogisApiClient(unittest.TestCase):
             url,
             json=payload,
             headers={
-                'Content-Type': 'application/json; charset=UTF-8',
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'Origin': 'https://fogis.svenskfotboll.se',
-                'Referer': f"{FogisApiClient.BASE_URL}/",
-                'X-Requested-With': 'XMLHttpRequest',
-                'Cookie': 'FogisMobilDomarKlient.ASPXAUTH=mock_auth_cookie'
-            }
+                "Content-Type": "application/json; charset=UTF-8",
+                "Accept": "application/json, text/javascript, */*; q=0.01",
+                "Origin": "https://fogis.svenskfotboll.se",
+                "Referer": f"{FogisApiClient.BASE_URL}/",
+                "X-Requested-With": "XMLHttpRequest",
+                "Cookie": "FogisMobilDomarKlient.ASPXAUTH=mock_auth_cookie",
+            },
         )
 
     def test_api_request_get_success(self):
@@ -153,21 +161,21 @@ class TestFogisApiClient(unittest.TestCase):
         mock_session_instance.get.return_value = mock_api_response
 
         # Call _api_request
-        response_data = self.client._api_request(url, method='GET')
+        response_data = self.client._api_request(url, method="GET")
 
         # Verify the result
-        self.assertEqual(response_data, {'items': [1, 2, 3]})
+        self.assertEqual(response_data, {"items": [1, 2, 3]})
         mock_session_instance.get.assert_called_once_with(
             url,
             params=None,
             headers={
-                'Content-Type': 'application/json; charset=UTF-8',
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'Origin': 'https://fogis.svenskfotboll.se',
-                'Referer': f"{FogisApiClient.BASE_URL}/",
-                'X-Requested-With': 'XMLHttpRequest',
-                'Cookie': 'FogisMobilDomarKlient.ASPXAUTH=mock_auth_cookie'
-            }
+                "Content-Type": "application/json; charset=UTF-8",
+                "Accept": "application/json, text/javascript, */*; q=0.01",
+                "Origin": "https://fogis.svenskfotboll.se",
+                "Referer": f"{FogisApiClient.BASE_URL}/",
+                "X-Requested-With": "XMLHttpRequest",
+                "Cookie": "FogisMobilDomarKlient.ASPXAUTH=mock_auth_cookie",
+            },
         )
 
     def test_api_request_http_error(self):
@@ -180,24 +188,26 @@ class TestFogisApiClient(unittest.TestCase):
         # Create a mock response that raises an HTTP error
         mock_api_response = MockResponse({"error": "Not found"}, 404)
         mock_session_instance.post.return_value = mock_api_response
-        mock_api_response.raise_for_status = MagicMock(side_effect=requests.exceptions.HTTPError("HTTP Error 404"))
+        mock_api_response.raise_for_status = MagicMock(
+            side_effect=requests.exceptions.HTTPError("HTTP Error 404")
+        )
 
         # Call _api_request and expect an exception
         with self.assertRaises(FogisAPIRequestError) as excinfo:
-            self.client._api_request(url, payload, method='POST')
+            self.client._api_request(url, payload, method="POST")
 
         self.assertIn("API request failed", str(excinfo.exception))
         mock_session_instance.post.assert_called_once_with(
             url,
             json=payload,
             headers={
-                'Content-Type': 'application/json; charset=UTF-8',
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'Origin': 'https://fogis.svenskfotboll.se',
-                'Referer': f"{FogisApiClient.BASE_URL}/",
-                'X-Requested-With': 'XMLHttpRequest',
-                'Cookie': 'FogisMobilDomarKlient.ASPXAUTH=mock_auth_cookie'
-            }
+                "Content-Type": "application/json; charset=UTF-8",
+                "Accept": "application/json, text/javascript, */*; q=0.01",
+                "Origin": "https://fogis.svenskfotboll.se",
+                "Referer": f"{FogisApiClient.BASE_URL}/",
+                "X-Requested-With": "XMLHttpRequest",
+                "Cookie": "FogisMobilDomarKlient.ASPXAUTH=mock_auth_cookie",
+            },
         )
 
     def test_api_request_invalid_json_response(self):
@@ -212,7 +222,7 @@ class TestFogisApiClient(unittest.TestCase):
         mock_session_instance.post.return_value = mock_api_response
 
         # Call _api_request and expect the response to be returned as is
-        response_data = self.client._api_request(url, payload, method='POST')
+        response_data = self.client._api_request(url, payload, method="POST")
 
         # Verify the result
         self.assertEqual(response_data, {"not_d": "some_value"})
@@ -221,19 +231,21 @@ class TestFogisApiClient(unittest.TestCase):
             url,
             json=payload,
             headers={
-                'Content-Type': 'application/json; charset=UTF-8',
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'Origin': 'https://fogis.svenskfotboll.se',
-                'Referer': f"{FogisApiClient.BASE_URL}/",
-                'X-Requested-With': 'XMLHttpRequest',
-                'Cookie': 'FogisMobilDomarKlient.ASPXAUTH=mock_auth_cookie'
-            }
+                "Content-Type": "application/json; charset=UTF-8",
+                "Accept": "application/json, text/javascript, */*; q=0.01",
+                "Origin": "https://fogis.svenskfotboll.se",
+                "Referer": f"{FogisApiClient.BASE_URL}/",
+                "X-Requested-With": "XMLHttpRequest",
+                "Cookie": "FogisMobilDomarKlient.ASPXAUTH=mock_auth_cookie",
+            },
         )
 
     def test_fetch_matches_list_json_success(self):
         """Unit test for fetch_matches_list_json success."""
         # Mock the _api_request method
-        self.client._api_request = MagicMock(return_value={"matcher": [{"matchid": 1}, {"matchid": 2}]})
+        self.client._api_request = MagicMock(
+            return_value={"matcher": [{"matchid": 1}, {"matchid": 2}]}
+        )
 
         # Call fetch_matches_list_json
         matches_list = self.client.fetch_matches_list_json()
@@ -241,8 +253,7 @@ class TestFogisApiClient(unittest.TestCase):
         # Verify the result
         self.assertEqual(matches_list, [{"matchid": 1}, {"matchid": 2}])
         self.client._api_request.assert_called_once_with(
-            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaMatchLista",
-            {}
+            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaMatchLista", {}
         )
 
     def test_fetch_matches_list_json_call_args(self):
@@ -255,8 +266,7 @@ class TestFogisApiClient(unittest.TestCase):
 
         # Verify the API call
         self.client._api_request.assert_called_once_with(
-            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaMatchLista",
-            {}
+            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaMatchLista", {}
         )
 
     def test_fetch_matches_list_json_api_call_only(self):
@@ -265,16 +275,15 @@ class TestFogisApiClient(unittest.TestCase):
         self.client._api_request = MagicMock(return_value={"matcher": []})
 
         # Call fetch_matches_list_json WITHOUT filter argument
-        self.client.fetch_matches_list_json()  # Call fetch_matches_list_json WITHOUT filter argument
+        self.client.fetch_matches_list_json()
 
         # Verify the API call
         self.client._api_request.assert_called_once_with(
-            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaMatchLista",
-            {}
+            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaMatchLista", {}
         )
 
     def test_fetch_matches_list_json_server_date_filter_call_args(self):
-        """Unit test for fetch_matches_list_json verifying server-side date filter arguments."""
+        """Test fetch_matches_list_json with server-side date filter arguments."""
         # Mock the _api_request method
         self.client._api_request = MagicMock(return_value={"matcher": []})
 
@@ -284,7 +293,7 @@ class TestFogisApiClient(unittest.TestCase):
                 "datumFran": "2023-01-01",
                 "datumTill": "2023-01-31",
                 "datumTyp": "match",
-                "sparadDatum": "2023-01-15"
+                "sparadDatum": "2023-01-15",
             }
         )
 
@@ -295,14 +304,16 @@ class TestFogisApiClient(unittest.TestCase):
                 "datumFran": "2023-01-01",
                 "datumTill": "2023-01-31",
                 "datumTyp": "match",
-                "sparadDatum": "2023-01-15"
-            }
+                "sparadDatum": "2023-01-15",
+            },
         )
 
     def test_fetch_match_result_json(self):
         """Unit test for fetch_match_result_json method."""
         # Mock the _api_request method
-        self.client._api_request = MagicMock(return_value=[{"matchresultattypid": 1, "matchlag1mal": 2, "matchlag2mal": 1}])
+        self.client._api_request = MagicMock(
+            return_value=[{"matchresultattypid": 1, "matchlag1mal": 2, "matchlag2mal": 1}]
+        )
 
         # Call fetch_match_result_json
         match_id = 12345
@@ -317,13 +328,14 @@ class TestFogisApiClient(unittest.TestCase):
         # Verify the API call
         self.client._api_request.assert_called_once_with(
             f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatchresultatlista",
-            {"matchid": 12345}
+            {"matchid": 12345},
         )
 
     def test_fetch_match_result_json_error(self):
         """Unit test for fetch_match_result_json method with error."""
         # Mock the _api_request method to raise an exception
-        self.client._api_request = MagicMock(side_effect=FogisAPIRequestError("API request failed"))
+        error_msg = "API request failed"
+        self.client._api_request = MagicMock(side_effect=FogisAPIRequestError(error_msg))
 
         # Call fetch_match_result_json and expect an exception
         with self.assertRaises(FogisAPIRequestError) as excinfo:
@@ -335,7 +347,7 @@ class TestFogisApiClient(unittest.TestCase):
         # Verify the API call
         self.client._api_request.assert_called_once_with(
             f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatchresultatlista",
-            {"matchid": 12345}
+            {"matchid": 12345},
         )
 
     def test_report_match_result(self):
@@ -349,7 +361,7 @@ class TestFogisApiClient(unittest.TestCase):
             "hemmamal": 2,
             "bortamal": 1,
             "halvtidHemmamal": 1,
-            "halvtidBortamal": 0
+            "halvtidBortamal": 0,
         }
         response = self.client.report_match_result(result_data)
 
@@ -364,21 +376,18 @@ class TestFogisApiClient(unittest.TestCase):
                 "hemmamal": 2,
                 "bortamal": 1,
                 "halvtidHemmamal": 1,
-                "halvtidBortamal": 0
-            }
+                "halvtidBortamal": 0,
+            },
         )
 
     def test_report_match_result_error(self):
         """Unit test for report_match_result method with error."""
         # Mock the _api_request method to raise an exception
-        self.client._api_request = MagicMock(side_effect=FogisAPIRequestError("API request failed"))
+        error_msg = "API request failed"
+        self.client._api_request = MagicMock(side_effect=FogisAPIRequestError(error_msg))
 
         # Call report_match_result and expect an exception
-        result_data = {
-            "matchid": "12345",
-            "hemmamal": 2,
-            "bortamal": 1
-        }
+        result_data = {"matchid": "12345", "hemmamal": 2, "bortamal": 1}
         with self.assertRaises(FogisAPIRequestError) as excinfo:
             self.client.report_match_result(result_data)
 
@@ -388,11 +397,7 @@ class TestFogisApiClient(unittest.TestCase):
         # Verify the API call
         self.client._api_request.assert_called_once_with(
             f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchresultatLista",
-            {
-                "matchid": 12345,  # Should be converted to int
-                "hemmamal": 2,
-                "bortamal": 1
-            }
+            {"matchid": 12345, "hemmamal": 2, "bortamal": 1},  # Should be converted to int
         )
 
     def test_event_types_dictionary(self):
@@ -431,7 +436,7 @@ class TestFogisApiClient(unittest.TestCase):
             "lagid": "67890",
             "personid": "54321",
             "matchlagledaretypid": "2",  # Example: Yellow card
-            "minut": 65
+            "minut": 65,
         }
         response = self.client.report_team_official_action(action_data)
 
@@ -446,21 +451,22 @@ class TestFogisApiClient(unittest.TestCase):
                 "lagid": 67890,  # Should be converted to int
                 "personid": 54321,  # Should be converted to int
                 "matchlagledaretypid": 2,  # Should be converted to int
-                "minut": 65
-            }
+                "minut": 65,
+            },
         )
 
     def test_report_team_official_action_error(self):
         """Unit test for report_team_official_action method with error."""
         # Mock the _api_request method to raise an exception
-        self.client._api_request = MagicMock(side_effect=FogisAPIRequestError("API request failed"))
+        error_msg = "API request failed"
+        self.client._api_request = MagicMock(side_effect=FogisAPIRequestError(error_msg))
 
         # Call report_team_official_action and expect an exception
         action_data = {
             "matchid": "12345",
             "lagid": "67890",
             "personid": "54321",
-            "matchlagledaretypid": "2"
+            "matchlagledaretypid": "2",
         }
         with self.assertRaises(FogisAPIRequestError) as excinfo:
             self.client.report_team_official_action(action_data)
@@ -475,10 +481,10 @@ class TestFogisApiClient(unittest.TestCase):
                 "matchid": 12345,  # Should be converted to int
                 "lagid": 67890,  # Should be converted to int
                 "personid": 54321,  # Should be converted to int
-                "matchlagledaretypid": 2  # Should be converted to int
-            }
+                "matchlagledaretypid": 2,  # Should be converted to int
+            },
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

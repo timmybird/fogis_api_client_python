@@ -1,9 +1,9 @@
 import os
-import unittest
 import subprocess
-import time
-import requests
+import unittest
+
 import docker
+
 
 class TestDockerSetup(unittest.TestCase):
     """Test the Docker setup functionality.
@@ -19,8 +19,8 @@ class TestDockerSetup(unittest.TestCase):
         try:
             client = docker.from_env()
             client.ping()
-        except:
-            raise unittest.SkipTest("Docker is not available")
+        except Exception as e:
+            raise unittest.SkipTest(f"Docker is not available: {e}")
 
         # Build the Docker image
         cls.image_name = "fogis-api-client-test"
@@ -31,8 +31,11 @@ class TestDockerSetup(unittest.TestCase):
             container = client.containers.get(cls.container_name)
             container.stop()
             container.remove()
-        except:
+        except docker.errors.NotFound:
+            # Container doesn't exist, which is fine
             pass
+        except Exception as e:
+            print(f"Warning: Error removing existing container: {e}")
 
         # Build the image
         cls.client = client
@@ -43,7 +46,7 @@ class TestDockerSetup(unittest.TestCase):
         self.env_vars = {
             "FOGIS_USERNAME": "test_user",
             "FOGIS_PASSWORD": "test_password",
-            "FLASK_DEBUG": "0"
+            "FLASK_DEBUG": "0",
         }
 
     def tearDown(self):
@@ -53,13 +56,21 @@ class TestDockerSetup(unittest.TestCase):
             container = self.client.containers.get(self.container_name)
             container.stop()
             container.remove()
-        except:
+        except docker.errors.NotFound:
+            # Container doesn't exist, which is fine
             pass
+        except Exception as e:
+            print(f"Warning: Error removing container during tearDown: {e}")
 
     def test_docker_compose_file_exists(self):
         """Test that the Docker Compose files exist."""
-        self.assertTrue(os.path.exists("docker-compose.yml"), "Production Docker Compose file does not exist")
-        self.assertTrue(os.path.exists("docker-compose.dev.yml"), "Development Docker Compose file does not exist")
+        self.assertTrue(
+            os.path.exists("docker-compose.yml"), "Production Docker Compose file does not exist"
+        )
+        self.assertTrue(
+            os.path.exists("docker-compose.dev.yml"),
+            "Development Docker Compose file does not exist",
+        )
 
     def test_dockerfile_exists(self):
         """Test that the Dockerfiles exist."""
@@ -74,7 +85,9 @@ class TestDockerSetup(unittest.TestCase):
 
         if not (os.path.exists(".env") or os.path.exists(".env.example")):
             with open(".env.example", "w") as f:
-                f.write("FOGIS_USERNAME=your_username\nFOGIS_PASSWORD=your_password\nFLASK_DEBUG=1\n")
+                f.write(
+                    "FOGIS_USERNAME=your_username\nFOGIS_PASSWORD=your_password\nFLASK_DEBUG=1\n"
+                )
             env_created = True
 
         if not os.path.exists(".env.dev"):
@@ -83,9 +96,13 @@ class TestDockerSetup(unittest.TestCase):
             env_dev_created = True
 
         try:
-            self.assertTrue(os.path.exists(".env") or os.path.exists(".env.example"),
-                        "Neither .env nor .env.example file exists")
-            self.assertTrue(os.path.exists(".env.dev"), "Development environment file does not exist")
+            self.assertTrue(
+                os.path.exists(".env") or os.path.exists(".env.example"),
+                "Neither .env nor .env.example file exists",
+            )
+            self.assertTrue(
+                os.path.exists(".env.dev"), "Development environment file does not exist"
+            )
         finally:
             # Clean up temporary files if we created them
             if env_created and os.path.exists(".env.example"):
@@ -104,18 +121,33 @@ class TestDockerSetup(unittest.TestCase):
 
         try:
             # Check production config
-            result = subprocess.run(["docker", "compose", "-f", "docker-compose.yml", "config"],
-                                capture_output=True, text=True)
-            self.assertEqual(result.returncode, 0, f"Production Docker Compose config is invalid: {result.stderr}")
+            result = subprocess.run(
+                ["docker", "compose", "-f", "docker-compose.yml", "config"],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(
+                result.returncode,
+                0,
+                f"Production Docker Compose config is invalid: {result.stderr}",
+            )
 
             # Check development config
-            result = subprocess.run(["docker", "compose", "-f", "docker-compose.dev.yml", "config"],
-                                capture_output=True, text=True)
-            self.assertEqual(result.returncode, 0, f"Development Docker Compose config is invalid: {result.stderr}")
+            result = subprocess.run(
+                ["docker", "compose", "-f", "docker-compose.dev.yml", "config"],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(
+                result.returncode,
+                0,
+                f"Development Docker Compose config is invalid: {result.stderr}",
+            )
         finally:
             # Clean up the temporary .env file if we created it
             if env_created and os.path.exists(".env"):
                 os.remove(".env")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

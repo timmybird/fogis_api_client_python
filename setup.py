@@ -18,7 +18,7 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.7',
+    python_requires=">=3.7",
     install_requires=[
         "requests",
         "beautifulsoup4",
@@ -28,12 +28,12 @@ setuptools.setup(
         "marshmallow",
     ],
     extras_require={
-        'dev': [
-            'pytest',
-            'pytest-mock',
-            'pytest-cov',
-            'flake8',
-            'flask-cors',
+        "dev": [
+            "pytest",
+            "pytest-mock",
+            "pytest-cov",
+            "flake8",
+            "flask-cors",
         ],
     },
     include_package_data=True,
