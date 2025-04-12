@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 from bs4 import BeautifulSoup
@@ -67,7 +67,8 @@ class FogisApiClient:
         Initializes the FogisApiClient with either login credentials or session cookies.
 
         There are two ways to authenticate:
-        1. Username and password: Authentication happens automatically on the first API request (lazy login),
+        1. Username and password: Authentication happens automatically on the first
+           API request (lazy login),
            or you can call login() explicitly if needed.
         2. Session cookies: Provide cookies obtained from a previous session or external source.
 
@@ -217,7 +218,9 @@ class FogisApiClient:
         if isinstance(response_data, dict):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary response but got {type(response_data).__name__}: {response_data}")
+            raise FogisDataError(
+                f"Expected dictionary response but got {type(response_data).__name__}: {response_data}"
+            )
 
     def fetch_match_players_json(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
@@ -242,7 +245,9 @@ class FogisApiClient:
         if isinstance(response_data, dict):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary response but got {type(response_data).__name__}: {response_data}")
+            raise FogisDataError(
+                f"Expected dictionary response but got {type(response_data).__name__}: {response_data}"
+            )
 
     def fetch_match_officials_json(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
@@ -267,7 +272,9 @@ class FogisApiClient:
         if isinstance(response_data, dict):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary response but got {type(response_data).__name__}: {response_data}")
+            raise FogisDataError(
+                f"Expected dictionary response but got {type(response_data).__name__}: {response_data}"
+            )
 
     def fetch_match_events_json(self, match_id: Union[str, int]) -> List[Dict[str, Any]]:
         """
@@ -292,7 +299,9 @@ class FogisApiClient:
         if isinstance(response_data, list):
             return response_data
         else:
-            raise FogisDataError(f"Expected list response but got {type(response_data).__name__}: {response_data}")
+            raise FogisDataError(
+                f"Expected list response but got {type(response_data).__name__}: {response_data}"
+            )
 
     def fetch_team_players_json(self, team_id: Union[str, int]) -> Dict[str, Any]:
         """
@@ -321,7 +330,9 @@ class FogisApiClient:
         elif isinstance(response_data, list):
             return {"spelare": response_data}
         else:
-            raise FogisDataError(f"Expected dictionary or list but got {type(response_data).__name__}: {response_data}")
+            raise FogisDataError(
+                f"Expected dictionary or list but got {type(response_data).__name__}: {response_data}"
+            )
 
     def fetch_team_officials_json(self, team_id: Union[str, int]) -> List[Dict[str, Any]]:
         """
@@ -346,7 +357,9 @@ class FogisApiClient:
         if isinstance(response_data, list):
             return response_data
         else:
-            raise FogisDataError(f"Expected list response but got {type(response_data).__name__}: {response_data}")
+            raise FogisDataError(
+                f"Expected list response but got {type(response_data).__name__}: {response_data}"
+            )
 
     def report_match_event(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -370,9 +383,13 @@ class FogisApiClient:
         if isinstance(response_data, dict):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary response but got {type(response_data).__name__}: {response_data}")
+            raise FogisDataError(
+                f"Expected dictionary response but got {type(response_data).__name__}: {response_data}"
+            )
 
-    def fetch_match_result_json(self, match_id: Union[str, int]) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+    def fetch_match_result_json(
+        self, match_id: Union[str, int]
+    ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """
         Fetches the list of match results in JSON format for a given match ID.
 
@@ -395,7 +412,9 @@ class FogisApiClient:
         if isinstance(response_data, (dict, list)):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary or list response but got {type(response_data).__name__}: {response_data}")
+            raise FogisDataError(
+                f"Expected dictionary or list response but got {type(response_data).__name__}: {response_data}"
+            )
 
     def report_match_result(self, result_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -427,7 +446,9 @@ class FogisApiClient:
         if isinstance(response_data, dict):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary response but got {type(response_data).__name__}: {response_data}")
+            raise FogisDataError(
+                f"Expected dictionary response but got {type(response_data).__name__}: {response_data}"
+            )
 
     def delete_match_event(self, event_id: Union[str, int]) -> bool:
         """
@@ -490,7 +511,9 @@ class FogisApiClient:
         if isinstance(response_data, dict):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary response but got {type(response_data).__name__}: {response_data}")
+            raise FogisDataError(
+                f"Expected dictionary response but got {type(response_data).__name__}: {response_data}"
+            )
 
     def clear_match_events(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
@@ -515,7 +538,9 @@ class FogisApiClient:
         if isinstance(response_data, dict):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary response but got {type(response_data).__name__}: {response_data}")
+            raise FogisDataError(
+                f"Expected dictionary response but got {type(response_data).__name__}: {response_data}"
+            )
 
     def validate_cookies(self) -> bool:
         """
@@ -595,7 +620,8 @@ class FogisApiClient:
         """
         # Validate match_id
         if not match_id:
-            raise ValueError("match_id cannot be empty")
+            msg = "match_id cannot be empty"
+            raise ValueError(msg)
 
         payload = {"matchid": int(match_id)}
         response_data = self._api_request(
@@ -606,7 +632,9 @@ class FogisApiClient:
         if isinstance(response_data, dict):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary response but got {type(response_data).__name__}: {response_data}")
+            raise FogisDataError(
+                f"Expected dictionary response but got {type(response_data).__name__}: {response_data}"
+            )
 
     def _api_request(
         self, url: str, payload: Optional[Dict[str, Any]] = None, method: str = "POST"
