@@ -47,7 +47,7 @@ class MatchListFilter:
         return self
 
     def saved_datum(self, saved_datum: str) -> "MatchListFilter":
-        """Sets the saved date for filter (likely not server-side, but included for completeness)."""
+        """Sets the saved date for filter (not server-side, included for completeness)."""
 
         self._sparad_datum = saved_datum
         return self

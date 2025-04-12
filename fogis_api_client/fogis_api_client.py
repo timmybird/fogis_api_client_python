@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 from bs4 import BeautifulSoup
@@ -50,8 +50,8 @@ class FogisApiClient:
     A client for interacting with the FOGIS API.
 
     This client implements lazy login, meaning it will automatically authenticate
-    when making API requests if not already logged in. You can also explicitly call
-    login() if you want to pre-authenticate.
+    when making API requests if not already logged in. You can also explicitly
+    call login() if you want to pre-authenticate.
     """
 
     BASE_URL = "https://fogis.svenskfotboll.se/mdk"  # Define base URL as a class constant
@@ -64,17 +64,23 @@ class FogisApiClient:
         cookies: Optional[Dict[str, str]] = None,
     ):
         """
-        Initializes the FogisApiClient with either login credentials or session cookies.
+        Initializes the FogisApiClient with either login credentials or session
+        cookies.
 
         There are two ways to authenticate:
-        1. Username and password: Authentication happens automatically on the first API request (lazy login),
+        1. Username and password: Authentication happens automatically on the first
+           API request (lazy login),
            or you can call login() explicitly if needed.
-        2. Session cookies: Provide cookies obtained from a previous session or external source.
+        2. Session cookies: Provide cookies obtained from a previous session or
+           external source.
 
         Args:
-            username (Optional[str]): FOGIS username. Required if cookies are not provided.
-            password (Optional[str]): FOGIS password. Required if cookies are not provided.
-            cookies (Optional[Dict[str, str]]): Session cookies for authentication. If provided, username and password are not required.
+            username (Optional[str]): FOGIS username. Required if cookies are not
+                provided.
+            password (Optional[str]): FOGIS password. Required if cookies are not
+                provided.
+            cookies (Optional[Dict[str, str]]): Session cookies for authentication.
+                If provided, username and password are not required.
 
         Raises:
             ValueError: If neither valid credentials nor cookies are provided
@@ -92,7 +98,8 @@ class FogisApiClient:
                 self.session.cookies.set(key, value)
             self.logger.info("Initialized with provided cookies")
         elif not (username and password):
-            raise ValueError("Either username and password OR cookies must be provided")
+            msg = "Either username and password OR cookies must be provided"
+            raise ValueError(msg)
 
     def login(self) -> Dict[str, str]:
         """
@@ -100,15 +107,17 @@ class FogisApiClient:
 
         Note: It is not necessary to call this method explicitly as the client
         implements lazy login and will authenticate automatically when needed.
-        If the client was initialized with cookies, this method will return those cookies
-        without attempting to log in again.
+        If the client was initialized with cookies, this method will return those
+        cookies without attempting to log in again.
 
         Returns:
             Dict[str, str]: The session cookies if login is successful
 
         Raises:
-            FogisLoginError: If login fails or if neither credentials nor cookies are available
-            FogisAPIRequestError: If there is an error during the login request
+            FogisLoginError: If login fails or if neither credentials nor cookies
+                are available
+            FogisAPIRequestError: If there is an error during the login
+                request
         """
         # If cookies are already set, return them without logging in again
         if self.cookies:
@@ -117,13 +126,14 @@ class FogisApiClient:
 
         # If no username/password provided, we can't log in
         if not (self.username and self.password):
-            self.logger.error("Login failed: No credentials provided and no cookies available")
-            raise FogisLoginError("Login failed: No credentials provided and no cookies available")
+            error_msg = "Login failed: No credentials provided and no cookies available"
+            self.logger.error(error_msg)
+            raise FogisLoginError(error_msg)
 
         login_url = f"{FogisApiClient.BASE_URL}/Login.aspx?ReturnUrl=%2fmdk%2f"
 
         try:
-            # Get the login page to retrieve the __VIEWSTATE and __EVENTVALIDATION
+            # Get the login page to retrieve the form elements
             response = self.session.get(login_url)
             response.raise_for_status()
 
@@ -132,8 +142,9 @@ class FogisApiClient:
             eventvalidation = soup.find("input", {"name": "__EVENTVALIDATION"})
 
             if not viewstate or not eventvalidation:
-                self.logger.error("Login failed: Could not find form elements")
-                raise FogisLoginError("Login failed: Could not find form elements")
+                error_msg = "Login failed: Could not find form elements"
+                self.logger.error(error_msg)
+                raise FogisLoginError(error_msg)
 
             viewstate = viewstate["value"]
             eventvalidation = eventvalidation["value"]
@@ -159,8 +170,9 @@ class FogisApiClient:
                 self.logger.info("Login successful")
                 return self.cookies
             else:
-                self.logger.error("Login failed: Invalid credentials or session issue")
-                raise FogisLoginError("Login failed: Invalid credentials or session issue")
+                error_msg = "Login failed: Invalid credentials or session issue"
+                self.logger.error(error_msg)
+                raise FogisLoginError(error_msg)
 
         except requests.exceptions.RequestException as e:
             self.logger.error(f"Login request failed: {e}")
@@ -172,8 +184,10 @@ class FogisApiClient:
 
         Args:
             filter (dict, optional): An OPTIONAL dictionary containing server-side
-                date range filter criteria (`datumFran`, `datumTill`, `datumTyp`, `sparadDatum`).
-                Defaults to None, which fetches matches for the default date range.
+                date range filter criteria (`datumFran`, `datumTill`, `datumTyp`,
+                `sparadDatum`).
+                Defaults to None, which fetches matches for the default date
+                range.
 
         Returns:
             list: A list of match dictionaries
@@ -217,7 +231,9 @@ class FogisApiClient:
         if isinstance(response_data, dict):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary response but got {type(response_data).__name__}: {response_data}")
+            error_type = type(response_data).__name__
+            msg = f"Expected dictionary response but got {error_type}"
+            raise FogisDataError(msg)
 
     def fetch_match_players_json(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
@@ -242,7 +258,9 @@ class FogisApiClient:
         if isinstance(response_data, dict):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary response but got {type(response_data).__name__}: {response_data}")
+            error_type = type(response_data).__name__
+            msg = f"Expected dictionary response but got {error_type}"
+            raise FogisDataError(msg)
 
     def fetch_match_officials_json(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
@@ -267,7 +285,9 @@ class FogisApiClient:
         if isinstance(response_data, dict):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary response but got {type(response_data).__name__}: {response_data}")
+            error_type = type(response_data).__name__
+            msg = f"Expected dictionary response but got {error_type}"
+            raise FogisDataError(msg)
 
     def fetch_match_events_json(self, match_id: Union[str, int]) -> List[Dict[str, Any]]:
         """
@@ -292,7 +312,9 @@ class FogisApiClient:
         if isinstance(response_data, list):
             return response_data
         else:
-            raise FogisDataError(f"Expected list response but got {type(response_data).__name__}: {response_data}")
+            error_type = type(response_data).__name__
+            msg = f"Expected list response but got {error_type}"
+            raise FogisDataError(msg)
 
     def fetch_team_players_json(self, team_id: Union[str, int]) -> Dict[str, Any]:
         """
@@ -321,7 +343,9 @@ class FogisApiClient:
         elif isinstance(response_data, list):
             return {"spelare": response_data}
         else:
-            raise FogisDataError(f"Expected dictionary or list but got {type(response_data).__name__}: {response_data}")
+            error_type = type(response_data).__name__
+            msg = f"Expected dictionary or list but got {error_type}"
+            raise FogisDataError(msg)
 
     def fetch_team_officials_json(self, team_id: Union[str, int]) -> List[Dict[str, Any]]:
         """
@@ -346,7 +370,9 @@ class FogisApiClient:
         if isinstance(response_data, list):
             return response_data
         else:
-            raise FogisDataError(f"Expected list response but got {type(response_data).__name__}: {response_data}")
+            error_type = type(response_data).__name__
+            msg = f"Expected list response but got {error_type}"
+            raise FogisDataError(msg)
 
     def report_match_event(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -370,9 +396,13 @@ class FogisApiClient:
         if isinstance(response_data, dict):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary response but got {type(response_data).__name__}: {response_data}")
+            error_type = type(response_data).__name__
+            msg = f"Expected dictionary response but got {error_type}"
+            raise FogisDataError(msg)
 
-    def fetch_match_result_json(self, match_id: Union[str, int]) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+    def fetch_match_result_json(
+        self, match_id: Union[str, int]
+    ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """
         Fetches the list of match results in JSON format for a given match ID.
 
@@ -395,7 +425,9 @@ class FogisApiClient:
         if isinstance(response_data, (dict, list)):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary or list response but got {type(response_data).__name__}: {response_data}")
+            error_type = type(response_data).__name__
+            msg = f"Expected dictionary or list response but got {error_type}"
+            raise FogisDataError(msg)
 
     def report_match_result(self, result_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -427,7 +459,9 @@ class FogisApiClient:
         if isinstance(response_data, dict):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary response but got {type(response_data).__name__}: {response_data}")
+            error_type = type(response_data).__name__
+            msg = f"Expected dictionary response but got {error_type}"
+            raise FogisDataError(msg)
 
     def delete_match_event(self, event_id: Union[str, int]) -> bool:
         """
@@ -464,7 +498,8 @@ class FogisApiClient:
         Reports team official disciplinary action to the FOGIS API.
 
         Args:
-            action_data (Dict[str, Any]): Data containing team official action details. Should include:
+            action_data (Dict[str, Any]): Data containing team official action details.
+                Should include:
                 - matchid (int): The ID of the match
                 - lagid (int): The ID of the team
                 - personid (int): The ID of the team official
@@ -490,7 +525,9 @@ class FogisApiClient:
         if isinstance(response_data, dict):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary response but got {type(response_data).__name__}: {response_data}")
+            error_type = type(response_data).__name__
+            msg = f"Expected dictionary response but got {error_type}"
+            raise FogisDataError(msg)
 
     def clear_match_events(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
@@ -515,7 +552,9 @@ class FogisApiClient:
         if isinstance(response_data, dict):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary response but got {type(response_data).__name__}: {response_data}")
+            error_type = type(response_data).__name__
+            msg = f"Expected dictionary response but got {error_type}"
+            raise FogisDataError(msg)
 
     def validate_cookies(self) -> bool:
         """
@@ -531,7 +570,7 @@ class FogisApiClient:
 
         try:
             # Make a simple request to check if the session is still active
-            # We use the matches list endpoint as it's a common endpoint that requires authentication
+            # We use the matches list endpoint as it requires authentication
             self._api_request(
                 url=f"{FogisApiClient.BASE_URL}/Fogis/Match/HamtaMatchLista", method="GET"
             )
@@ -595,7 +634,8 @@ class FogisApiClient:
         """
         # Validate match_id
         if not match_id:
-            raise ValueError("match_id cannot be empty")
+            msg = "match_id cannot be empty"
+            raise ValueError(msg)
 
         payload = {"matchid": int(match_id)}
         response_data = self._api_request(
@@ -606,22 +646,27 @@ class FogisApiClient:
         if isinstance(response_data, dict):
             return response_data
         else:
-            raise FogisDataError(f"Expected dictionary response but got {type(response_data).__name__}: {response_data}")
+            error_type = type(response_data).__name__
+            msg = f"Expected dictionary response but got {error_type}"
+            raise FogisDataError(msg)
 
     def _api_request(
         self, url: str, payload: Optional[Dict[str, Any]] = None, method: str = "POST"
     ) -> Union[Dict[str, Any], List[Dict[str, Any]], str]:
         """
         Internal helper function to make API requests to FOGIS.
-        Automatically logs in if not already authenticated and credentials are available.
+        Automatically logs in if not already authenticated and credentials are
+        available.
 
         Args:
             url (str): The URL to make the request to
-            payload (Optional[Dict[str, Any]], optional): The payload to send with the request
+            payload (Optional[Dict[str, Any]], optional): The payload to send with
+                the request
             method (str, optional): The HTTP method to use (default: 'POST')
 
         Returns:
-            Union[Dict[str, Any], List[Dict[str, Any]], str]: The response data from the API
+            Union[Dict[str, Any], List[Dict[str, Any]], str]: The response data
+                from the API
 
         Raises:
             FogisLoginError: If login fails or if authentication is not possible
@@ -661,7 +706,8 @@ class FogisApiClient:
             elif method.upper() == "GET":
                 response = self.session.get(url, params=payload, headers=api_headers)
             else:
-                raise ValueError(f"Unsupported HTTP method: {method}")
+                msg = f"Unsupported HTTP method: {method}"
+                raise ValueError(msg)
 
             response.raise_for_status()
 
@@ -684,8 +730,10 @@ class FogisApiClient:
                 return response_json
 
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"API request failed: {e}")
-            raise FogisAPIRequestError(f"API request failed: {e}")
+            error_msg = f"API request failed: {e}"
+            self.logger.error(error_msg)
+            raise FogisAPIRequestError(error_msg)
         except json.JSONDecodeError as e:
-            self.logger.error(f"Failed to parse API response: {e}")
-            raise FogisDataError(f"Failed to parse API response: {e}")
+            error_msg = f"Failed to parse API response: {e}"
+            self.logger.error(error_msg)
+            raise FogisDataError(error_msg)
