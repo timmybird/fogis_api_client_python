@@ -536,11 +536,11 @@ class FogisApiClient:
         Raises:
             FogisAPIRequestError: If there's an error with the API request
         """
-        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/TaBortMatchhandelse"
-        payload = {"handelseid": int(event_id)}
+        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/RaderaMatchhandelse"
+        payload = {"matchhandelseid": int(event_id) if isinstance(event_id, str) else event_id}
 
         response_data = self._api_request(url, payload)
-        return cast(Dict[str, Any], response_data).get("success", False)
+        return response_data is None
 
     def _api_request(
         self, url: str, payload: Optional[Dict[str, Any]] = None, method: str = "POST"
