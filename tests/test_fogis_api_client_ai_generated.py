@@ -6,11 +6,7 @@ from unittest.mock import Mock, patch
 
 import requests
 
-from fogis_api_client.fogis_api_client import (
-    FogisApiClient,
-    FogisAPIRequestError,
-    FogisDataError,
-)
+from fogis_api_client.fogis_api_client import FogisApiClient, FogisAPIRequestError, FogisDataError
 
 
 class TestFogisApiClient(unittest.TestCase):
@@ -38,7 +34,10 @@ class TestFogisApiClient(unittest.TestCase):
         """Test successful login."""
         # Mock the get response
         mock_get_response = Mock()
-        mock_get_response.text = '<input name="__VIEWSTATE" value="viewstate_value" /><input name="__EVENTVALIDATION" value="eventvalidation_value" />'
+        mock_get_response.text = (
+            '<input name="__VIEWSTATE" value="viewstate_value" />'
+            '<input name="__EVENTVALIDATION" value="eventvalidation_value" />'
+        )
         mock_get.return_value = mock_get_response
 
         # Mock the post response

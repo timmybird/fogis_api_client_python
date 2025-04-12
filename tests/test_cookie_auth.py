@@ -51,7 +51,10 @@ class TestCookieAuth(unittest.TestCase):
 
         # Create mock responses
         mock_get_response = MagicMock()
-        mock_get_response.text = '<input name="__VIEWSTATE" value="test_viewstate" /><input name="__EVENTVALIDATION" value="test_eventvalidation" />'
+        mock_get_response.text = (
+            '<input name="__VIEWSTATE" value="test_viewstate" />'
+            '<input name="__EVENTVALIDATION" value="test_eventvalidation" />'
+        )
         mock_get_response.raise_for_status = lambda: None
 
         mock_post_response = MagicMock()

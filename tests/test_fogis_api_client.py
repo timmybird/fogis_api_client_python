@@ -5,11 +5,7 @@ from unittest.mock import MagicMock, Mock
 
 import requests
 
-from fogis_api_client.fogis_api_client import (
-    FogisApiClient,
-    FogisAPIRequestError,
-    FogisLoginError,
-)
+from fogis_api_client.fogis_api_client import FogisApiClient, FogisAPIRequestError, FogisLoginError
 
 
 class MockResponse:
@@ -73,7 +69,10 @@ class TestFogisApiClient(unittest.TestCase):
 
         # Mock the get response to return a valid login page
         mock_get_response = Mock()
-        mock_get_response.text = '<input name="__VIEWSTATE" value="viewstate_value" /><input name="__EVENTVALIDATION" value="eventvalidation_value" />'
+        mock_get_response.text = (
+            '<input name="__VIEWSTATE" value="viewstate_value" />'
+            '<input name="__EVENTVALIDATION" value="eventvalidation_value" />'
+        )
         mocked_session.get.return_value = mock_get_response
 
         # Mock the post response to simulate successful login
@@ -102,7 +101,10 @@ class TestFogisApiClient(unittest.TestCase):
 
         # Mock the get response to return a valid login page
         mock_get_response = Mock()
-        mock_get_response.text = '<input name="__VIEWSTATE" value="viewstate_value" /><input name="__EVENTVALIDATION" value="eventvalidation_value" />'
+        mock_get_response.text = (
+            '<input name="__VIEWSTATE" value="viewstate_value" />'
+            '<input name="__EVENTVALIDATION" value="eventvalidation_value" />'
+        )
         mocked_session.get.return_value = mock_get_response
 
         # Mock the post response to simulate failed login
@@ -273,7 +275,7 @@ class TestFogisApiClient(unittest.TestCase):
         self.client._api_request = MagicMock(return_value={"matcher": []})
 
         # Call fetch_matches_list_json WITHOUT filter argument
-        self.client.fetch_matches_list_json()  # Call fetch_matches_list_json WITHOUT filter argument
+        self.client.fetch_matches_list_json()
 
         # Verify the API call
         self.client._api_request.assert_called_once_with(
@@ -281,7 +283,7 @@ class TestFogisApiClient(unittest.TestCase):
         )
 
     def test_fetch_matches_list_json_server_date_filter_call_args(self):
-        """Unit test for fetch_matches_list_json verifying server-side date filter arguments."""
+        """Test fetch_matches_list_json with server-side date filter arguments."""
         # Mock the _api_request method
         self.client._api_request = MagicMock(return_value={"matcher": []})
 
@@ -332,7 +334,8 @@ class TestFogisApiClient(unittest.TestCase):
     def test_fetch_match_result_json_error(self):
         """Unit test for fetch_match_result_json method with error."""
         # Mock the _api_request method to raise an exception
-        self.client._api_request = MagicMock(side_effect=FogisAPIRequestError("API request failed"))
+        error_msg = "API request failed"
+        self.client._api_request = MagicMock(side_effect=FogisAPIRequestError(error_msg))
 
         # Call fetch_match_result_json and expect an exception
         with self.assertRaises(FogisAPIRequestError) as excinfo:
@@ -380,7 +383,8 @@ class TestFogisApiClient(unittest.TestCase):
     def test_report_match_result_error(self):
         """Unit test for report_match_result method with error."""
         # Mock the _api_request method to raise an exception
-        self.client._api_request = MagicMock(side_effect=FogisAPIRequestError("API request failed"))
+        error_msg = "API request failed"
+        self.client._api_request = MagicMock(side_effect=FogisAPIRequestError(error_msg))
 
         # Call report_match_result and expect an exception
         result_data = {"matchid": "12345", "hemmamal": 2, "bortamal": 1}
@@ -454,7 +458,8 @@ class TestFogisApiClient(unittest.TestCase):
     def test_report_team_official_action_error(self):
         """Unit test for report_team_official_action method with error."""
         # Mock the _api_request method to raise an exception
-        self.client._api_request = MagicMock(side_effect=FogisAPIRequestError("API request failed"))
+        error_msg = "API request failed"
+        self.client._api_request = MagicMock(side_effect=FogisAPIRequestError(error_msg))
 
         # Call report_team_official_action and expect an exception
         action_data = {

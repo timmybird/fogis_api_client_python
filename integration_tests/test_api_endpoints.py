@@ -23,7 +23,8 @@ def retry_on_failure(max_retries=3, delay=2):
                 except (ConnectionError, Timeout, AssertionError) as e:
                     if attempt < max_retries - 1:
                         logger.warning(
-                            f"Test failed on attempt {attempt + 1}/{max_retries}: {e}. Retrying in {delay} seconds..."
+                            f"Test failed on attempt {attempt + 1}/{max_retries}: {e}. "
+                            f"Retrying in {delay} seconds..."
                         )
                         time.sleep(delay)
                     else:

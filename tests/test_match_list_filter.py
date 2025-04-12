@@ -120,13 +120,13 @@ class TestMatchListFilter(unittest.TestCase):
                 self.assertNotIn(
                     football_type_id,
                     expected_football_type_ids,
-                    f"Match {match.get('matchid')} has excluded football type {football_type_id}",
+                    f"Match {match.get('matchid')} has excluded type {football_type_id}",
                 )
             else:  # Inclusion check
                 self.assertIn(
                     football_type_id,
                     expected_football_type_ids,
-                    f"Match {match.get('matchid')} does not have expected football type (inclusion)",
+                    f"Match {match.get('matchid')} missing expected type (inclusion)",
                 )
 
     # --- Status Filter Tests ---
@@ -169,7 +169,8 @@ class TestMatchListFilter(unittest.TestCase):
         """Test including only female gender matches."""
         match_filter = MatchListFilter().include_genders([Gender.FEMALE])
         filtered_matches = match_filter.filter_matches(self.test_matches)
-        self._assert_filtered_genders(filtered_matches, [Gender.FEMALE])  # Use helper assertion
+        # Use helper assertion
+        self._assert_filtered_genders(filtered_matches, [Gender.FEMALE])
 
     def test_filter_exclude_female_gender(self):
         """Test excluding female gender matches."""
