@@ -496,6 +496,52 @@ class FogisApiClient:
         )
         return cast(Dict[str, Any], response_data)
 
+    def report_team_official_action(self, action_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Reports a team official action (e.g., yellow/red card for coach) to FOGIS.
+
+        Args:
+            action_data (Dict[str, Any]): Data for the action to report. Should include:
+                - matchid: The ID of the match
+                - lagid: The ID of the team
+                - personid: The ID of the team official
+                - matchlagledaretypid: The type of action (e.g., 2 for yellow card)
+                - minut: The minute when the action occurred
+
+        Returns:
+            Dict[str, Any]: Response from the API
+
+        Raises:
+            FogisAPIRequestError: If there's an error with the API request
+        """
+        # Convert string IDs to integers
+        for key in ["matchid", "lagid", "personid", "matchlagledaretypid"]:
+            if key in action_data and isinstance(action_data[key], str):
+                action_data[key] = int(action_data[key])
+
+        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchlagledare"
+        response_data = self._api_request(url, action_data)
+        return cast(Dict[str, Any], response_data)
+
+    def delete_match_event(self, event_id: Union[str, int]) -> bool:
+        """
+        Deletes a match event from FOGIS.
+
+        Args:
+            event_id (Union[str, int]): The ID of the event to delete
+
+        Returns:
+            bool: True if deletion was successful, False otherwise
+
+        Raises:
+            FogisAPIRequestError: If there's an error with the API request
+        """
+        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/TaBortMatchhandelse"
+        payload = {"handelseid": int(event_id)}
+
+        response_data = self._api_request(url, payload)
+        return cast(Dict[str, Any], response_data).get("success", False)
+
     def _api_request(
         self, url: str, payload: Optional[Dict[str, Any]] = None, method: str = "POST"
     ) -> Union[Dict[str, Any], List[Dict[str, Any]], str]:
