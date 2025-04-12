@@ -387,7 +387,7 @@ class FogisApiClient:
         if "matchid" in result_data:
             result_data["matchid"] = int(result_data["matchid"])
 
-        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchresultat"
+        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchresultatLista"
         response_data = self._api_request(url, result_data)
         return cast(Dict[str, Any], response_data)
 

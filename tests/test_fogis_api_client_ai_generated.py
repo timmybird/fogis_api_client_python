@@ -231,8 +231,8 @@ class TestFogisApiClient(unittest.TestCase):
     @patch("fogis_api_client.fogis_api_client.FogisApiClient._api_request")
     def test_delete_match_event_success(self, mock_api_request):
         """Test successful delete_match_event."""
-        # Mock the _api_request method to return success
-        mock_api_request.return_value = {"success": True}
+        # Mock the _api_request method to return None (indicating success)
+        mock_api_request.return_value = None
 
         # Call the method
         result = self.api_client.delete_match_event(event_id=123)
