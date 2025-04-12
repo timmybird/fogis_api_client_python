@@ -1,10 +1,36 @@
 # Changelog
 
+## [0.1.0] - 2025-04-11
+
+### Added
+- Cookie-based authentication support (Issue #1)
+  - Users can now authenticate using cookies instead of username/password
+  - New `get_cookies()` method to retrieve session cookies for later use
+  - New `validate_cookies()` method to check if cookies are still valid
+- Flask endpoints for credential management (Issue #13)
+  - `/auth/login`: Generate and return tokens based on credentials
+  - `/auth/validate`: Check if a token is valid
+  - `/auth/refresh`: Refresh an existing token
+  - `/auth/logout`: Revoke a token
+- Type hints throughout the codebase (Issue #51)
+- Pre-commit hooks for code quality (Issue #54)
+- Health check endpoint for Docker (Issue #46)
+- Improved testing guidelines in CONTRIBUTING.md
+
+### Changed
+- Renamed HTTP wrapper to FOGIS API Gateway (Issue #30)
+- Improved Docker configuration
+- Reduced integration test wait time
+- Updated documentation with examples of cookie-based authentication
+
+### Fixed
+- Fixed type conversion in API client to accept both string and integer IDs
+- Fixed integration test wait time to exit early when API is ready
+
 ## [0.0.11] - 2025-04-11
 
 ### Changed
 - Reverted to v0.0.5 codebase due to critical issues in later versions
-- Created CHANGES_SINCE_V0.0.5.md to document features that need to be re-implemented
 
 ## [0.0.10] - 2025-04-08
 
