@@ -95,7 +95,7 @@ class MatchListFilter:
         Date range, status, alderskategori, and kon filters are now COMPLETELY OMITTED from the default server-side payload
         if they are not explicitly configured using the builder methods, for maximum efficiency and API clarity.
         """
-        payload_filter = {}
+        payload_filter: Dict[str, Any] = {}
 
         # --- Conditionally add date range filters to payload ONLY if configured ---
         if self._datum_fran:
@@ -105,7 +105,7 @@ class MatchListFilter:
 
         # --- Conditionally add status, alderskategori, kon filters (same logic as before) ---
         if self._status_include or self._status_exclude:
-            status_values = []
+            status_values: List[str] = []
             if self._status_include:
                 status_values = [status.value for status in self._status_include]
             elif self._status_exclude:
@@ -113,7 +113,7 @@ class MatchListFilter:
             payload_filter["status"] = status_values
 
         if self._alderskategori_include or self._alderskategori_exclude:
-            age_category_values = []
+            age_category_values: List[int] = []
             if self._alderskategori_include:
                 age_category_values = [cat.value for cat in self._alderskategori_include]
             elif self._alderskategori_exclude:
@@ -121,7 +121,7 @@ class MatchListFilter:
             payload_filter["alderskategori"] = age_category_values
 
         if self._kon_include or self._kon_exclude:
-            gender_values = []
+            gender_values: List[int] = []
             if self._kon_include:
                 gender_values = [gender.value for gender in self._kon_include]
             elif self._kon_exclude:

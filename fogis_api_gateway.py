@@ -4,6 +4,7 @@ import signal
 import sys
 import time
 from datetime import datetime
+from typing import Optional
 
 from flask import Flask, jsonify, request
 
@@ -32,12 +33,14 @@ debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
 
 # Initialize the Fogis API client but don't login yet
 # Login will happen automatically when needed (lazy login)
+client: Optional[FogisApiClient] = None
+client_initialized = False
+
 try:
     client = FogisApiClient(fogis_username, fogis_password)
     client_initialized = True
 except Exception as e:
     logger.error(f"Failed to initialize FogisApiClient: {e}")
-    client = None
     client_initialized = False
 
 # Log startup information
