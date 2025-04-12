@@ -1,11 +1,10 @@
 # fogis_api_client
 ### A Python client for interacting with the FOGIS API (Svensk Fotboll).
 
-> **IMPORTANT NOTE**: Version 0.0.11 is a revert to the v0.0.5 codebase due to critical issues in later versions. See CHANGES_SINCE_V0.0.5.md for features that will be re-implemented in future versions.
-
 #### Features
-* Authentication with FOGIS API.
+* Authentication with FOGIS API using either credentials or cookies.
 * Lazy login - automatically authenticates when needed.
+* Cookie-based authentication for improved security.
 * Fetching match lists, team players, officials, and events.
 * Reporting match events and results.
 * Error handling and logging.
@@ -50,6 +49,32 @@ client.login()  # Explicitly authenticate
 # ... make API requests
 ```
 
+#### Cookie-Based Authentication
+
+For improved security, you can authenticate using cookies instead of storing credentials:
+
+```python
+# First, get cookies from a logged-in session
+client = FogisApiClient(username, password)
+client.login()
+cookies = client.get_cookies()  # Save these cookies securely
+
+# Later, in another session, use the saved cookies
+client = FogisApiClient(cookies=cookies)
+# No need to call login() - already authenticated with cookies
+matches = client.fetch_matches_list_json()
+```
+
+You can validate if the cookies are still valid:
+
+```python
+client = FogisApiClient(cookies=cookies)
+if client.validate_cookies():
+    print("Cookies are valid")
+else:
+    print("Cookies have expired, need to login with credentials again")
+```
+
 ---
 #### Docker Support
 
@@ -89,7 +114,7 @@ For more details on the development environment, see [README.dev.md](README.dev.
 ---
 #### API Endpoints
 
-The HTTP API wrapper provides the following endpoints:
+The FOGIS API Gateway provides the following endpoints:
 
 ##### Basic Endpoints
 - `GET /` - Returns a test JSON response

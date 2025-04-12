@@ -7,6 +7,7 @@ from datetime import datetime
 import time
 import os
 from urllib.parse import urlparse, parse_qs
+from typing import Dict, List, Any, Optional, Union, Tuple, cast
 
 # Event types dictionary for match events
 event_types = {  # Consistent Integer Keys for ALL event types (where applicable)
@@ -52,38 +53,63 @@ class FogisApiClient:
     BASE_URL = "https://fogis.svenskfotboll.se/mdk"  # Define base URL as a class constant
     logger = logging.getLogger(__name__)
 
-    def __init__(self, username, password):
+    def __init__(self, username: Optional[str] = None, password: Optional[str] = None, cookies: Optional[Dict[str, str]] = None):
         """
-        Initializes the FogisApiClient with login credentials.
+        Initializes the FogisApiClient with either login credentials or session cookies.
 
-        Authentication happens automatically on the first API request (lazy login),
-        but you can also call login() explicitly if needed.
+        There are two ways to authenticate:
+        1. Username and password: Authentication happens automatically on the first API request (lazy login),
+           or you can call login() explicitly if needed.
+        2. Session cookies: Provide cookies obtained from a previous session or external source.
 
         Args:
-            username (str): FOGIS username
-            password (str): FOGIS password
+            username (Optional[str]): FOGIS username. Required if cookies are not provided.
+            password (Optional[str]): FOGIS password. Required if cookies are not provided.
+            cookies (Optional[Dict[str, str]]): Session cookies for authentication. If provided, username and password are not required.
+
+        Raises:
+            ValueError: If neither valid credentials nor cookies are provided
         """
         self.username = username
         self.password = password
         self.session = requests.Session()
         self.cookies = None
 
-    def login(self):
+        # If cookies are provided, use them directly
+        if cookies:
+            self.cookies = cookies
+            # Add cookies to the session
+            for key, value in cookies.items():
+                self.session.cookies.set(key, value)
+            self.logger.info("Initialized with provided cookies")
+        elif not (username and password):
+            raise ValueError("Either username and password OR cookies must be provided")
+
+    def login(self) -> Dict[str, str]:
         """
         Logs into the FOGIS API and stores the session cookies.
 
         Note: It is not necessary to call this method explicitly as the client
         implements lazy login and will authenticate automatically when needed.
+        If the client was initialized with cookies, this method will return those cookies
+        without attempting to log in again.
 
         Returns:
-            dict: The session cookies if login is successful
+            Dict[str, str]: The session cookies if login is successful
 
         Raises:
-            FogisLoginError: If login fails
+            FogisLoginError: If login fails or if neither credentials nor cookies are available
             FogisAPIRequestError: If there is an error during the login request
         """
+        # If cookies are already set, return them without logging in again
         if self.cookies:
+            self.logger.debug("Already authenticated, using existing cookies")
             return self.cookies
+
+        # If no username/password provided, we can't log in
+        if not (self.username and self.password):
+            self.logger.error("Login failed: No credentials provided and no cookies available")
+            raise FogisLoginError("Login failed: No credentials provided and no cookies available")
 
         login_url = f"{FogisApiClient.BASE_URL}/Login.aspx?ReturnUrl=%2fmdk%2f"
 
@@ -159,12 +185,12 @@ class FogisApiClient:
             self.logger.error("Invalid response data: 'matcher' key not found")
             raise FogisDataError("Invalid response data: 'matcher' key not found")
 
-    def fetch_match_json(self, match_id: int):
+    def fetch_match_json(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
         Fetches detailed information for a specific match.
 
         Args:
-            match_id (int): The ID of the match to fetch
+            match_id (Union[str, int]): The ID of the match to fetch
 
         Returns:
             dict: Match details
@@ -179,12 +205,12 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def fetch_match_players_json(self, match_id: int):
+    def fetch_match_players_json(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
         Fetches player information for a specific match.
 
         Args:
-            match_id (int): The ID of the match
+            match_id (Union[str, int]): The ID of the match
 
         Returns:
             dict: Player information for the match
@@ -198,12 +224,12 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def fetch_match_officials_json(self, match_id: int):
+    def fetch_match_officials_json(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
         Fetches officials information for a specific match.
 
         Args:
-            match_id (int): The ID of the match
+            match_id (Union[str, int]): The ID of the match
 
         Returns:
             dict: Officials information for the match
@@ -217,12 +243,12 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def fetch_match_events_json(self, match_id: int):
+    def fetch_match_events_json(self, match_id: Union[str, int]) -> List[Dict[str, Any]]:
         """
         Fetches events information for a specific match.
 
         Args:
-            match_id (int): The ID of the match
+            match_id (Union[str, int]): The ID of the match
 
         Returns:
             dict: Events information for the match
@@ -236,12 +262,12 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def fetch_team_players_json(self, team_id: int):
+    def fetch_team_players_json(self, team_id: Union[str, int]) -> List[Dict[str, Any]]:
         """
         Fetches player information for a specific team.
 
         Args:
-            team_id (int): The ID of the team
+            team_id (Union[str, int]): The ID of the team
 
         Returns:
             dict: Player information for the team
@@ -255,12 +281,12 @@ class FogisApiClient:
 
         return self._api_request(url, payload)
 
-    def fetch_team_officials_json(self, team_id: int):
+    def fetch_team_officials_json(self, team_id: Union[str, int]) -> List[Dict[str, Any]]:
         """
         Fetches officials information for a specific team.
 
         Args:
-            team_id (int): The ID of the team
+            team_id (Union[str, int]): The ID of the team
 
         Returns:
             dict: Officials information for the team
@@ -292,12 +318,12 @@ class FogisApiClient:
 
         return self._api_request(url, event_data)
 
-    def fetch_match_result_json(self, match_id: int):
+    def fetch_match_result_json(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
         Fetches the list of match results in JSON format for a given match ID.
 
         Args:
-            match_id (int): The ID of the match
+            match_id (Union[str, int]): The ID of the match
 
         Returns:
             dict: Result information for the match
@@ -391,12 +417,12 @@ class FogisApiClient:
         action_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchlagledare"
         return self._api_request(action_url, action_data)
 
-    def clear_match_events(self, match_id: int):
+    def clear_match_events(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
         Clear all events for a match.
 
         Args:
-            match_id (int): The ID of the match
+            match_id (Union[str, int]): The ID of the match
 
         Returns:
             dict: Response from the API
@@ -411,7 +437,51 @@ class FogisApiClient:
             payload=payload
         )
 
-    def hello_world(self):
+    def validate_cookies(self) -> bool:
+        """
+        Validates if the current cookies are still valid for authentication.
+
+        This method makes a simple API request to check if the session is still active.
+
+        Returns:
+            bool: True if cookies are valid, False otherwise
+        """
+        if not self.cookies:
+            return False
+
+        try:
+            # Make a simple request to check if the session is still active
+            # We use the matches list endpoint as it's a common endpoint that requires authentication
+            self._api_request(
+                url=f"{FogisApiClient.BASE_URL}/Fogis/Match/HamtaMatchLista",
+                method='GET'
+            )
+            return True
+        except (FogisLoginError, FogisAPIRequestError):
+            self.logger.info("Cookies are no longer valid")
+            return False
+
+    def get_cookies(self) -> Optional[Dict[str, str]]:
+        """
+        Returns the current session cookies.
+
+        This method can be used to retrieve cookies for later use, allowing authentication
+        without storing credentials.
+
+        Returns:
+            Optional[Dict[str, str]]: The current session cookies, or None if not authenticated
+
+        Example:
+            >>> client = FogisApiClient(username, password)
+            >>> client.login()
+            >>> cookies = client.get_cookies()  # Save these cookies for later use
+            >>>
+            >>> # Later, in another session:
+            >>> client = FogisApiClient(cookies=cookies)  # Authenticate with saved cookies
+        """
+        return self.cookies
+
+    def hello_world(self) -> str:
         """
         Simple test method.
 
@@ -420,7 +490,7 @@ class FogisApiClient:
         """
         return "Hello, brave new world!"
 
-    def mark_reporting_finished(self, match_id: int):
+    def mark_reporting_finished(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
         Mark a match report as completed/finished in the FOGIS system.
 
@@ -428,7 +498,7 @@ class FogisApiClient:
         the match report and submits it officially.
 
         Args:
-            match_id (int): The ID of the match to mark as finished
+            match_id (Union[str, int]): The ID of the match to mark as finished
 
         Returns:
             dict: The response from the FOGIS API
@@ -452,32 +522,36 @@ class FogisApiClient:
             payload=payload
         )
 
-    def _api_request(self, url, payload=None, method='POST'):
+    def _api_request(self, url: str, payload: Optional[Dict[str, Any]] = None, method: str = 'POST') -> Union[Dict[str, Any], List[Dict[str, Any]], str]:
         """
         Internal helper function to make API requests to FOGIS.
-        Automatically logs in if not already authenticated.
+        Automatically logs in if not already authenticated and credentials are available.
 
         Args:
             url (str): The URL to make the request to
-            payload (dict, optional): The payload to send with the request
+            payload (Optional[Dict[str, Any]], optional): The payload to send with the request
             method (str, optional): The HTTP method to use (default: 'POST')
 
         Returns:
-            dict: The response data from the API
+            Union[Dict[str, Any], List[Dict[str, Any]], str]: The response data from the API
 
         Raises:
-            FogisLoginError: If login fails
+            FogisLoginError: If login fails or if authentication is not possible
             FogisAPIRequestError: If there's an error with the API request
             FogisDataError: If the response data is invalid
         """
         # For tests only - mock response for specific URLs
-        if 'test' in self.username and url.endswith('HamtaMatchLista'):
+        if self.username and 'test' in self.username and url.endswith('HamtaMatchLista'):
             return {'matcher': []}
 
         # Lazy login - automatically log in if not already authenticated
         if not self.cookies:
             self.logger.info("Not logged in. Performing automatic login...")
-            self.login()
+            try:
+                self.login()
+            except FogisLoginError as e:
+                self.logger.error(f"Automatic login failed: {e}")
+                raise
 
             # Double-check that login was successful
             if not self.cookies:
