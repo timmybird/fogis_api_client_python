@@ -64,16 +64,85 @@ We follow a modified GitFlow workflow to ensure that the main branch is always i
 6. Merge the hotfix into develop as well: `git checkout develop && git merge hotfix/issue`
 7. Delete the hotfix branch
 
-### 5. Pull Request Process
-1. Create a PR through GitHub
-2. Fill out the PR template completely
-3. Wait for CI/CD to pass
-4. Get at least one review
-5. Address any feedback
-6. Merge according to the branch type (squash for features/fixes, no squash for releases/hotfixes)
-7. Delete the branch after merging
+### 5. Issue Management
 
-### 6. Commit Message Guidelines
+1. **Creating Issues**:
+   - Use descriptive titles that clearly state the problem or feature
+   - Include detailed descriptions with context and requirements
+   - Add appropriate labels (enhancement, bug, documentation, etc.)
+   - Add screenshots or examples when relevant
+   - Reference related issues or PRs
+
+2. **Issue Template**:
+   ```markdown
+   ## Description
+   [Clear description of the issue or feature request]
+
+   ## Current Behavior
+   [What currently happens, if applicable]
+
+   ## Expected Behavior
+   [What should happen instead]
+
+   ## Steps to Reproduce (for bugs)
+   1. [First Step]
+   2. [Second Step]
+   3. [and so on...]
+
+   ## Possible Solution (optional)
+   [Any ideas for how to implement or fix]
+
+   ## Context
+   [Any relevant context, environment details, etc.]
+   ```
+
+3. **Closing Issues**:
+   - Issues should be closed when the corresponding PR is merged
+   - Use closing keywords in PR descriptions (e.g., "Closes #123")
+   - If an issue is invalid or duplicate, close with a clear explanation
+   - Check if there are duplicate issues before creating new ones
+
+### 6. Pull Request Process
+
+1. **Creating PRs**:
+   - Create a PR through GitHub
+   - Use descriptive titles that clearly state the changes
+   - Fill out the PR template completely
+   - Reference related issues (e.g., "Closes #123")
+   - Add screenshots or examples when relevant
+
+2. **PR Template**:
+   ```markdown
+   ## Description
+   [Clear description of the changes made]
+
+   ## Related Issue
+   Closes #[issue number]
+
+   ## Type of Change
+   - [ ] Bug fix (non-breaking change that fixes an issue)
+   - [ ] New feature (non-breaking change that adds functionality)
+   - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+   - [ ] Documentation update
+
+   ## How Has This Been Tested?
+   [Describe the tests that you ran to verify your changes]
+
+   ## Checklist:
+   - [ ] My code follows the style guidelines of this project
+   - [ ] I have added tests that prove my fix is effective or that my feature works
+   - [ ] New and existing unit tests pass locally with my changes
+   - [ ] I have updated the documentation accordingly
+   ```
+
+3. **PR Review Process**:
+   - Wait for CI/CD to pass
+   - Get at least one review
+   - Address any feedback
+   - Merge according to the branch type (squash for features/fixes, no squash for releases/hotfixes)
+   - Delete the branch after merging
+
+### 7. Commit Message Guidelines
 - Use the format: `Type: Short description`
 - Types: `Fix`, `Feature`, `Docs`, `Style`, `Refactor`, `Test`, `Chore`
 - Example: `Fix: Ensure proper payload structure in fetch_matches_list_json`
@@ -247,7 +316,28 @@ If you are an AI assistant reading this:
    - Add regression tests for modified functionality
    - Verify that API endpoints still work as expected
 
-4. **Remind Users of the Process**:
+4. **Proper Issue Management**:
+   - Create well-structured issues with clear descriptions
+   - Add appropriate labels to issues
+   - Close issues when the corresponding PR is merged
+   - Use closing keywords in PR descriptions (e.g., "Closes #123")
+   - Check for duplicate issues before creating new ones
+   - Update issue status when working on it
+
+5. **Branch Cleanup**:
+   - Always delete branches after merging
+   - Remind users to delete branches after PRs are merged
+   - Don't leave stale branches in the repository
+   - Check if branches can be deleted when PRs are closed without merging
+
+6. **PR Best Practices**:
+   - Create descriptive PR titles
+   - Include detailed descriptions of changes
+   - Reference related issues
+   - Add screenshots or examples when relevant
+   - Respond to review comments
+
+7. **Remind Users of the Process**:
    - If a user asks you to push directly to main, remind them of the GitFlow process
    - Suggest creating a proper branch and PR instead
    - Reference this document when explaining the process
