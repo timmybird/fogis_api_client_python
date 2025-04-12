@@ -1,13 +1,14 @@
-import logging
-import re
 import json
+import logging
+import os
+import re
+import time
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from urllib.parse import parse_qs, urlparse
+
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
-import time
-import os
-from urllib.parse import urlparse, parse_qs
-from typing import Dict, List, Any, Optional, Union, Tuple, cast
 
 # Event types dictionary for match events
 event_types = {  # Consistent Integer Keys for ALL event types (where applicable)
@@ -26,21 +27,28 @@ event_types = {  # Consistent Integer Keys for ALL event types (where applicable
     17: {"name": "Substitution", "goal": False},
     31: {"name": "Period Start", "goal": False, "control_event": True},
     32: {"name": "Period End", "goal": False, "control_event": True},
-    23: {"name": "Match Slut", "goal": False, "control_event": True}
+    23: {"name": "Match Slut", "goal": False, "control_event": True},
 }
+
 
 # Custom exceptions
 class FogisLoginError(Exception):
     """Exception raised when login to FOGIS fails."""
+
     pass
+
 
 class FogisAPIRequestError(Exception):
     """Exception raised when an API request to FOGIS fails."""
+
     pass
+
 
 class FogisDataError(Exception):
     """Exception raised when there's an issue with the data from FOGIS."""
+
     pass
+
 
 class FogisApiClient:
     """
@@ -50,10 +58,16 @@ class FogisApiClient:
     when making API requests if not already logged in. You can also explicitly call
     login() if you want to pre-authenticate.
     """
+
     BASE_URL = "https://fogis.svenskfotboll.se/mdk"  # Define base URL as a class constant
     logger = logging.getLogger(__name__)
 
-    def __init__(self, username: Optional[str] = None, password: Optional[str] = None, cookies: Optional[Dict[str, str]] = None):
+    def __init__(
+        self,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        cookies: Optional[Dict[str, str]] = None,
+    ):
         """
         Initializes the FogisApiClient with either login credentials or session cookies.
 
@@ -63,9 +77,9 @@ class FogisApiClient:
         2. Session cookies: Provide cookies obtained from a previous session or external source.
 
         Args:
-            username (Optional[str]): FOGIS username. Required if cookies are not provided.
-            password (Optional[str]): FOGIS password. Required if cookies are not provided.
-            cookies (Optional[Dict[str, str]]): Session cookies for authentication. If provided, username and password are not required.
+            username (Optional[str], optional): FOGIS username. Defaults to None.
+            password (Optional[str], optional): FOGIS password. Defaults to None.
+            cookies (Optional[Dict[str, str]], optional): Session cookies from a previous session. Defaults to None.
 
         Raises:
             ValueError: If neither valid credentials nor cookies are provided
@@ -118,26 +132,21 @@ class FogisApiClient:
             response = self.session.get(login_url)
             response.raise_for_status()
 
-            soup = BeautifulSoup(response.text, 'html.parser')
-            viewstate = soup.find('input', {'name': '__VIEWSTATE'})
-            eventvalidation = soup.find('input', {'name': '__EVENTVALIDATION'})
+            soup = BeautifulSoup(response.text, "html.parser")
+            viewstate = soup.find("input", {"name": "__VIEWSTATE"})
+            eventvalidation = soup.find("input", {"name": "__EVENTVALIDATION"})
 
             if not viewstate or not eventvalidation:
                 self.logger.error("Login failed: Could not find form elements")
                 raise FogisLoginError("Login failed: Could not find form elements")
 
-            viewstate = viewstate['value']
-            eventvalidation = eventvalidation['value']
-
             # Prepare login data
             login_data = {
-                '__EVENTTARGET': '',
-                '__EVENTARGUMENT': '',
-                '__VIEWSTATE': viewstate,
-                '__EVENTVALIDATION': eventvalidation,
-                'ctl00$cphMain$tbUsername': self.username,
-                'ctl00$cphMain$tbPassword': self.password,
-                'ctl00$cphMain$btnLogin': 'Logga in'
+                "__VIEWSTATE": viewstate["value"],
+                "__EVENTVALIDATION": eventvalidation["value"],
+                "ctl00$cphMain$txtUsername": self.username,
+                "ctl00$cphMain$txtPassword": self.password,
+                "ctl00$cphMain$btnLogin": "Logga in",
             }
 
             # Submit login form
@@ -145,7 +154,7 @@ class FogisApiClient:
             response.raise_for_status()
 
             # Check if login was successful
-            if 'FogisMobilDomarKlient.ASPXAUTH' in self.session.cookies:
+            if "FogisMobilDomarKlient.ASPXAUTH" in self.session.cookies:
                 self.cookies = {key: value for key, value in self.session.cookies.items()}
                 self.logger.info("Login successful")
                 return self.cookies
@@ -157,17 +166,17 @@ class FogisApiClient:
             self.logger.error(f"Login request failed: {e}")
             raise FogisAPIRequestError(f"Login request failed: {e}")
 
-    def fetch_matches_list_json(self, filter=None):
+    def fetch_matches_list_json(
+        self, filter: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
         """
-        Fetches the list of matches for the logged-in referee.
+        Fetches the list of matches in JSON format.
 
         Args:
-            filter (dict, optional): An OPTIONAL dictionary containing server-side
-                date range filter criteria (`datumFran`, `datumTill`, `datumTyp`, `sparadDatum`).
-                Defaults to None, which fetches matches for the default date range.
+            filter (Optional[Dict[str, Any]], optional): Filter parameters for the request. Defaults to None.
 
         Returns:
-            list: A list of match dictionaries
+            List[Dict[str, Any]]: List of matches
 
         Raises:
             FogisLoginError: If not logged in
@@ -179,8 +188,9 @@ class FogisApiClient:
 
         response_data = self._api_request(url, payload)
 
-        if 'matcher' in response_data:
-            return response_data['matcher']
+        # Type check and cast
+        if isinstance(response_data, dict) and "matcher" in response_data:
+            return cast(List[Dict[str, Any]], response_data["matcher"])
         else:
             self.logger.error("Invalid response data: 'matcher' key not found")
             raise FogisDataError("Invalid response data: 'matcher' key not found")
@@ -203,104 +213,119 @@ class FogisApiClient:
         url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaMatch"
         payload = {"matchid": int(match_id)}
 
-        return self._api_request(url, payload)
-
-    def fetch_match_players_json(self, match_id: Union[str, int]) -> Dict[str, Any]:
-        """
-        Fetches player information for a specific match.
-
-        Args:
-            match_id (Union[str, int]): The ID of the match
-
-        Returns:
-            dict: Player information for the match
-
-        Raises:
-            FogisLoginError: If not logged in
-            FogisAPIRequestError: If there's an error with the API request
-        """
-        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaMatchSpelare"
-        payload = {"matchid": int(match_id)}
-
-        return self._api_request(url, payload)
-
-    def fetch_match_officials_json(self, match_id: Union[str, int]) -> Dict[str, Any]:
-        """
-        Fetches officials information for a specific match.
-
-        Args:
-            match_id (Union[str, int]): The ID of the match
-
-        Returns:
-            dict: Officials information for the match
-
-        Raises:
-            FogisLoginError: If not logged in
-            FogisAPIRequestError: If there's an error with the API request
-        """
-        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaMatchFunktionarer"
-        payload = {"matchid": int(match_id)}
-
-        return self._api_request(url, payload)
+        response_data = self._api_request(url, payload)
+        return cast(Dict[str, Any], response_data)
 
     def fetch_match_events_json(self, match_id: Union[str, int]) -> List[Dict[str, Any]]:
         """
-        Fetches events information for a specific match.
+        Fetches the list of match events in JSON format for a given match ID.
 
         Args:
             match_id (Union[str, int]): The ID of the match
 
         Returns:
-            dict: Events information for the match
+            List[Dict[str, Any]]: List of match events
 
         Raises:
             FogisLoginError: If not logged in
             FogisAPIRequestError: If there's an error with the API request
+            FogisDataError: If the response data is invalid
         """
-        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaMatchHandelser"
+        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaMatchhandelser"
         payload = {"matchid": int(match_id)}
 
-        return self._api_request(url, payload)
+        response_data = self._api_request(url, payload)
+        return cast(List[Dict[str, Any]], response_data)
+
+    def fetch_match_players_json(self, match_id: Union[str, int]) -> List[Dict[str, Any]]:
+        """
+        Fetches the list of match players in JSON format for a given match ID.
+
+        Args:
+            match_id (Union[str, int]): The ID of the match
+
+        Returns:
+            List[Dict[str, Any]]: List of match players
+
+        Raises:
+            FogisLoginError: If not logged in
+            FogisAPIRequestError: If there's an error with the API request
+            FogisDataError: If the response data is invalid
+        """
+        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaMatchspelare"
+        payload = {"matchid": int(match_id)}
+
+        response_data = self._api_request(url, payload)
+        return cast(List[Dict[str, Any]], response_data)
+
+    def fetch_match_officials_json(self, match_id: Union[str, int]) -> List[Dict[str, Any]]:
+        """
+        Fetches the list of match officials in JSON format for a given match ID.
+
+        Args:
+            match_id (Union[str, int]): The ID of the match
+
+        Returns:
+            List[Dict[str, Any]]: List of match officials
+
+        Raises:
+            FogisLoginError: If not logged in
+            FogisAPIRequestError: If there's an error with the API request
+            FogisDataError: If the response data is invalid
+        """
+        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaMatchfunktionarer"
+        payload = {"matchid": int(match_id)}
+
+        response_data = self._api_request(url, payload)
+        return cast(List[Dict[str, Any]], response_data)
 
     def fetch_team_players_json(self, team_id: Union[str, int]) -> List[Dict[str, Any]]:
         """
-        Fetches player information for a specific team.
+        Fetches the list of team players in JSON format for a given team ID.
 
         Args:
             team_id (Union[str, int]): The ID of the team
 
         Returns:
-            dict: Player information for the team
+            List[Dict[str, Any]]: List of team players
 
         Raises:
             FogisLoginError: If not logged in
             FogisAPIRequestError: If there's an error with the API request
+            FogisDataError: If the response data is invalid
         """
-        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaLagSpelare"
+        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaLagspelare"
         payload = {"lagid": int(team_id)}
 
-        return self._api_request(url, payload)
+        response_data = self._api_request(url, payload)
+        if isinstance(response_data, dict) and "spelare" in response_data:
+            return cast(List[Dict[str, Any]], response_data["spelare"])
+        else:
+            self.logger.error("Invalid response data: 'spelare' key not found")
+            raise FogisDataError("Invalid response data: 'spelare' key not found")
 
     def fetch_team_officials_json(self, team_id: Union[str, int]) -> List[Dict[str, Any]]:
         """
-        Fetches officials information for a specific team.
+        Fetches the list of team officials in JSON format for a given team ID.
 
         Args:
             team_id (Union[str, int]): The ID of the team
 
         Returns:
-            dict: Officials information for the team
+            List[Dict[str, Any]]: List of team officials
 
         Raises:
             FogisLoginError: If not logged in
             FogisAPIRequestError: If there's an error with the API request
+            FogisDataError: If the response data is invalid
         """
-        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaLagFunktionarer"
+        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/HamtaLagfunktionarer"
         payload = {"lagid": int(team_id)}
 
-        return self._api_request(url, payload)
+        response_data = self._api_request(url, payload)
+        return cast(List[Dict[str, Any]], response_data)
 
-    def report_match_event(self, event_data):
+    def report_match_event(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Reports a match event to FOGIS.
 
@@ -316,7 +341,8 @@ class FogisApiClient:
         """
         url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchhandelse"
 
-        return self._api_request(url, event_data)
+        response_data = self._api_request(url, event_data)
+        return cast(Dict[str, Any], response_data)
 
     def fetch_match_result_json(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
@@ -335,9 +361,10 @@ class FogisApiClient:
         result_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatchresultatlista"
         payload = {"matchid": int(match_id)}
 
-        return self._api_request(result_url, payload)
+        response_data = self._api_request(result_url, payload)
+        return cast(Dict[str, Any], response_data)
 
-    def report_match_result(self, result_data):
+    def report_match_result(self, result_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Reports match results (halftime and fulltime) to the FOGIS API.
 
@@ -357,69 +384,16 @@ class FogisApiClient:
             FogisAPIRequestError: If there's an error with the API request
         """
         # Ensure matchid is an integer
-        if 'matchid' in result_data:
-            result_data['matchid'] = int(result_data['matchid'])
+        if "matchid" in result_data:
+            result_data["matchid"] = int(result_data["matchid"])
 
-        result_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchresultatLista"
-        return self._api_request(result_url, result_data)
-
-    def delete_match_event(self, event_id: int):
-        """
-        Deletes a specific event from a match.
-
-        Args:
-            event_id (int): The ID of the event to delete
-
-        Returns:
-            bool: True if deletion was successful, False otherwise
-
-        Raises:
-            FogisLoginError: If not logged in
-            FogisAPIRequestError: If there's an error with the API request
-        """
-        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/TaBortMatchHandelse"
-        payload = {"matchhandelseid": int(event_id)}
-
-        response_data = self._api_request(url, payload)
-
-        # Check if deletion was successful
-        return response_data.get('success', False)
-
-    def report_team_official_action(self, action_data: dict):
-        """
-        Reports team official disciplinary action to the FOGIS API.
-
-        Args:
-            action_data (dict): Data containing team official action details. Should include:
-                - matchid (int): The ID of the match
-                - lagid (int): The ID of the team
-                - personid (int): The ID of the team official
-                - matchlagledaretypid (int): The type ID of the disciplinary action
-                - minut (int, optional): The minute when the action occurred
-
-        Returns:
-            dict: Response from the API
-
-        Raises:
-            FogisLoginError: If not logged in
-            FogisAPIRequestError: If there's an error with the API request
-        """
-        # Ensure IDs are integers
-        if 'matchid' in action_data:
-            action_data['matchid'] = int(action_data['matchid'])
-        if 'lagid' in action_data:
-            action_data['lagid'] = int(action_data['lagid'])
-        if 'personid' in action_data:
-            action_data['personid'] = int(action_data['personid'])
-        if 'matchlagledaretypid' in action_data:
-            action_data['matchlagledaretypid'] = int(action_data['matchlagledaretypid'])
-
-        action_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchlagledare"
-        return self._api_request(action_url, action_data)
+        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchresultat"
+        response_data = self._api_request(url, result_data)
+        return cast(Dict[str, Any], response_data)
 
     def clear_match_events(self, match_id: Union[str, int]) -> Dict[str, Any]:
         """
-        Clear all events for a match.
+        Clears all events for a match.
 
         Args:
             match_id (Union[str, int]): The ID of the match
@@ -431,11 +405,11 @@ class FogisApiClient:
             FogisLoginError: If not logged in
             FogisAPIRequestError: If there's an error with the API request
         """
+        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/RensaMatchhandelser"
         payload = {"matchid": int(match_id)}
-        return self._api_request(
-            url=f"{FogisApiClient.BASE_URL}/Fogis/Match/ClearMatchEvents",
-            payload=payload
-        )
+
+        response_data = self._api_request(url, payload)
+        return cast(Dict[str, Any], response_data)
 
     def validate_cookies(self) -> bool:
         """
@@ -453,8 +427,7 @@ class FogisApiClient:
             # Make a simple request to check if the session is still active
             # We use the matches list endpoint as it's a common endpoint that requires authentication
             self._api_request(
-                url=f"{FogisApiClient.BASE_URL}/Fogis/Match/HamtaMatchLista",
-                method='GET'
+                url=f"{FogisApiClient.BASE_URL}/Fogis/Match/HamtaMatchLista", method="GET"
             )
             return True
         except (FogisLoginError, FogisAPIRequestError):
@@ -517,12 +490,15 @@ class FogisApiClient:
             raise ValueError("match_id cannot be empty")
 
         payload = {"matchid": int(match_id)}
-        return self._api_request(
+        response_data = self._api_request(
             url=f"{FogisApiClient.BASE_URL}/Fogis/Match/SparaMatchGodkannDomarrapport",
-            payload=payload
+            payload=payload,
         )
+        return cast(Dict[str, Any], response_data)
 
-    def _api_request(self, url: str, payload: Optional[Dict[str, Any]] = None, method: str = 'POST') -> Union[Dict[str, Any], List[Dict[str, Any]], str]:
+    def _api_request(
+        self, url: str, payload: Optional[Dict[str, Any]] = None, method: str = "POST"
+    ) -> Union[Dict[str, Any], List[Dict[str, Any]], str]:
         """
         Internal helper function to make API requests to FOGIS.
         Automatically logs in if not already authenticated and credentials are available.
@@ -541,8 +517,8 @@ class FogisApiClient:
             FogisDataError: If the response data is invalid
         """
         # For tests only - mock response for specific URLs
-        if self.username and 'test' in self.username and url.endswith('HamtaMatchLista'):
-            return {'matcher': []}
+        if self.username and "test" in self.username and url.endswith("HamtaMatchLista"):
+            return {"matcher": []}
 
         # Lazy login - automatically log in if not already authenticated
         if not self.cookies:
@@ -558,19 +534,20 @@ class FogisApiClient:
                 self.logger.error("Automatic login failed.")
                 raise FogisLoginError("Automatic login failed.")
 
+        # Set up headers for the API request
         api_headers = {
-            'Content-Type': 'application/json; charset=UTF-8',
-            'Accept': 'application/json, text/javascript, */*; q=0.01',
-            'Origin': 'https://fogis.svenskfotboll.se',
-            'Referer': f"{FogisApiClient.BASE_URL}/",  # Referer now using BASE_URL
-            'X-Requested-With': 'XMLHttpRequest',
-            'Cookie': '; '.join([f"{key}={value}" for key, value in self.cookies.items()])
+            "Content-Type": "application/json; charset=UTF-8",
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Origin": "https://fogis.svenskfotboll.se",
+            "Referer": f"{FogisApiClient.BASE_URL}/",  # Referer now using BASE_URL
+            "X-Requested-With": "XMLHttpRequest",
+            "Cookie": "; ".join([f"{key}={value}" for key, value in self.cookies.items()]),
         }
 
         try:
-            if method.upper() == 'POST':
+            if method.upper() == "POST":
                 response = self.session.post(url, json=payload, headers=api_headers)
-            elif method.upper() == 'GET':
+            elif method.upper() == "GET":
                 response = self.session.get(url, params=payload, headers=api_headers)
             else:
                 raise ValueError(f"Unsupported HTTP method: {method}")
@@ -581,17 +558,17 @@ class FogisApiClient:
             response_json = response.json()
 
             # FOGIS API returns data in a 'd' key
-            if 'd' in response_json:
+            if "d" in response_json:
                 # The 'd' value is a JSON string that needs to be parsed again
-                if isinstance(response_json['d'], str):
+                if isinstance(response_json["d"], str):
                     try:
-                        return json.loads(response_json['d'])
+                        return json.loads(response_json["d"])
                     except json.JSONDecodeError:
                         # If it's not valid JSON, return as is
-                        return response_json['d']
+                        return response_json["d"]
                 else:
                     # If 'd' is already a dict/list, return it directly
-                    return response_json['d']
+                    return response_json["d"]
             else:
                 return response_json
 

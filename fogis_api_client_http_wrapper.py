@@ -1,9 +1,11 @@
+import logging
 import os
 import signal
 import sys
-import logging
 import time
 from datetime import datetime
+from typing import Optional
+
 from flask import Flask, jsonify, request
 
 try:
@@ -12,6 +14,7 @@ except ImportError:
     # CORS is optional, only needed for development
     CORS = None
 
+from auth_routes import register_auth_routes
 from fogis_api_client.fogis_api_client import FogisApiClient
 from fogis_api_client.match_list_filter import MatchListFilter
 from fogis_api_client_swagger import get_swagger_blueprint, spec
@@ -19,10 +22,8 @@ from fogis_api_client_swagger import get_swagger_blueprint, spec
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
 
@@ -33,12 +34,15 @@ debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
 
 # Initialize the Fogis API client but don't login yet
 # Login will happen automatically when needed (lazy login)
+# Initialize client variable with proper type annotation
+client: Optional[FogisApiClient] = None
+client_initialized = False
+
 try:
     client = FogisApiClient(fogis_username, fogis_password)
     client_initialized = True
 except Exception as e:
     logger.error(f"Failed to initialize FogisApiClient: {e}")
-    client = None
     client_initialized = False
 
 # Log startup information
@@ -49,6 +53,10 @@ logger.info(f"Python version: {sys.version}")
 
 # Initialize the Flask app
 app = Flask(__name__)
+
+# Store the API client in the app config for use in routes
+app.config["FOGIS_CLIENT"] = client
+
 if CORS:
     CORS(app)  # Enable CORS for all routes if available
 
@@ -56,8 +64,12 @@ if CORS:
 swagger_ui_blueprint, SWAGGER_URL, API_URL = get_swagger_blueprint()
 app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
 
+# Register authentication routes
+register_auth_routes(app)
+
+
 # Add endpoint to serve the OpenAPI specification
-@app.route('/api/swagger.json')
+@app.route("/api/swagger.json")
 def get_swagger():
     return jsonify(spec.to_dict())
 
@@ -82,21 +94,21 @@ def health():
         current_time = datetime.now().isoformat()
 
         # Return a simple response
-        return jsonify({
-            "status": "healthy",
-            "timestamp": current_time,
-            "service": "fogis-api-client"
-        })
+        return jsonify(
+            {"status": "healthy", "timestamp": current_time, "service": "fogis-api-client"}
+        )
     except Exception as e:
         # Log the error but still return a 200 status code
         logger.error(f"Error in health check endpoint: {e}")
 
         # Return a simple response with the error
-        return jsonify({
-            "status": "warning",
-            "message": "Health check encountered an error but service is still responding",
-            "timestamp": time.time()
-        })
+        return jsonify(
+            {
+                "status": "warning",
+                "message": "Health check encountered an error but service is still responding",
+                "timestamp": time.time(),
+            }
+        )
 
 
 @app.route("/hello")
@@ -105,7 +117,9 @@ def hello():
     Test endpoint that calls the hello_world method of the Fogis API Client.
     """
     if not client_initialized:
-        return jsonify({"message": "FOGIS API client not initialized, but hello endpoint is still working!"})
+        return jsonify(
+            {"message": "FOGIS API client not initialized, but hello endpoint is still working!"}
+        )
     return jsonify({"message": client.hello_world()})
 
 
@@ -124,37 +138,33 @@ def matches():
     """
     try:
         # Parse query parameters
-        from_date = request.args.get('from_date')
-        to_date = request.args.get('to_date')
-        limit = request.args.get('limit')
-        offset = request.args.get('offset', 0, type=int)
-        sort_by = request.args.get('sort_by', 'datum')
-        order = request.args.get('order', 'asc')
+        from_date = request.args.get("from_date")
+        to_date = request.args.get("to_date")
+        limit = request.args.get("limit")
+        offset = request.args.get("offset", 0, type=int)
+        sort_by = request.args.get("sort_by", "datum")
+        order = request.args.get("order", "asc")
 
         # Create filter for server-side filtering
         filter_data = {}
         if from_date:
-            filter_data['datumFran'] = from_date
+            filter_data["datumFran"] = from_date
         if to_date:
-            filter_data['datumTill'] = to_date
+            filter_data["datumTill"] = to_date
 
         # Fetch matches with server-side filtering
         matches_list = client.fetch_matches_list_json(filter=filter_data)
 
         # Apply client-side sorting
-        if sort_by and sort_by in ['datum', 'hemmalag', 'bortalag', 'tavling']:
-            reverse = order.lower() == 'desc'
-            matches_list = sorted(
-                matches_list,
-                key=lambda x: x.get(sort_by, ''),
-                reverse=reverse
-            )
+        if sort_by and sort_by in ["datum", "hemmalag", "bortalag", "tavling"]:
+            reverse = order.lower() == "desc"
+            matches_list = sorted(matches_list, key=lambda x: x.get(sort_by, ""), reverse=reverse)
 
         # Apply client-side pagination
         if limit:
             try:
                 limit = int(limit)
-                matches_list = matches_list[offset:offset+limit]
+                matches_list = matches_list[offset : offset + limit]
             except ValueError:
                 pass  # Ignore invalid limit values
         elif offset > 0:
@@ -177,9 +187,9 @@ def match(match_id):
     """
     try:
         # Parse query parameters
-        include_events = request.args.get('include_events', 'true').lower() == 'true'
-        include_players = request.args.get('include_players', 'false').lower() == 'true'
-        include_officials = request.args.get('include_officials', 'false').lower() == 'true'
+        include_events = request.args.get("include_events", "true").lower() == "true"
+        include_players = request.args.get("include_players", "false").lower() == "true"
+        include_officials = request.args.get("include_officials", "false").lower() == "true"
 
         # Fetch basic match data
         match_data = client.fetch_match_json(match_id)
@@ -188,22 +198,22 @@ def match(match_id):
         if include_players:
             try:
                 players_data = client.fetch_match_players_json(match_id)
-                match_data['players'] = players_data
+                match_data["players"] = players_data
             except Exception as e:
                 # Don't fail the whole request if just this part fails
-                match_data['players'] = {'error': str(e)}
+                match_data["players"] = {"error": str(e)}
 
         if include_officials:
             try:
                 officials_data = client.fetch_match_officials_json(match_id)
-                match_data['officials'] = officials_data
+                match_data["officials"] = officials_data
             except Exception as e:
                 # Don't fail the whole request if just this part fails
-                match_data['officials'] = {'error': str(e)}
+                match_data["officials"] = {"error": str(e)}
 
         # If include_events is false, remove events from the response
-        if not include_events and 'events' in match_data:
-            del match_data['events']
+        if not include_events and "events" in match_data:
+            del match_data["events"]
 
         return jsonify(match_data)
     except Exception as e:
@@ -238,39 +248,37 @@ def match_events(match_id):
     """
     try:
         # Parse query parameters
-        event_type = request.args.get('type')
-        player = request.args.get('player')
-        team = request.args.get('team')
-        limit = request.args.get('limit')
-        offset = request.args.get('offset', 0, type=int)
-        sort_by = request.args.get('sort_by', 'time')
-        order = request.args.get('order', 'asc')
+        event_type = request.args.get("type")
+        player = request.args.get("player")
+        team = request.args.get("team")
+        limit = request.args.get("limit")
+        offset = request.args.get("offset", 0, type=int)
+        sort_by = request.args.get("sort_by", "time")
+        order = request.args.get("order", "asc")
 
         # Use the dedicated method for fetching match events
         events_data = client.fetch_match_events_json(match_id)
 
         # Apply client-side filtering
         if event_type:
-            events_data = [e for e in events_data if e.get('type', '').lower() == event_type.lower()]
+            events_data = [
+                e for e in events_data if e.get("type", "").lower() == event_type.lower()
+            ]
         if player:
-            events_data = [e for e in events_data if player.lower() in e.get('player', '').lower()]
+            events_data = [e for e in events_data if player.lower() in e.get("player", "").lower()]
         if team:
-            events_data = [e for e in events_data if team.lower() in e.get('team', '').lower()]
+            events_data = [e for e in events_data if team.lower() in e.get("team", "").lower()]
 
         # Apply client-side sorting
-        if sort_by and sort_by in ['time', 'type', 'player', 'team']:
-            reverse = order.lower() == 'desc'
-            events_data = sorted(
-                events_data,
-                key=lambda x: x.get(sort_by, ''),
-                reverse=reverse
-            )
+        if sort_by and sort_by in ["time", "type", "player", "team"]:
+            reverse = order.lower() == "desc"
+            events_data = sorted(events_data, key=lambda x: x.get(sort_by, ""), reverse=reverse)
 
         # Apply client-side pagination
         if limit:
             try:
                 limit = int(limit)
-                events_data = events_data[offset:offset+limit]
+                events_data = events_data[offset : offset + limit]
             except ValueError:
                 pass  # Ignore invalid limit values
         elif offset > 0:
@@ -343,39 +351,37 @@ def team_players(team_id):
     """
     try:
         # Parse query parameters
-        name = request.args.get('name')
-        position = request.args.get('position')
-        number = request.args.get('number')
-        limit = request.args.get('limit')
-        offset = request.args.get('offset', 0, type=int)
-        sort_by = request.args.get('sort_by', 'name')
-        order = request.args.get('order', 'asc')
+        name = request.args.get("name")
+        position = request.args.get("position")
+        number = request.args.get("number")
+        limit = request.args.get("limit")
+        offset = request.args.get("offset", 0, type=int)
+        sort_by = request.args.get("sort_by", "name")
+        order = request.args.get("order", "asc")
 
         # Fetch players data
         players_data = client.fetch_team_players_json(team_id)
 
         # Apply client-side filtering
         if name:
-            players_data = [p for p in players_data if name.lower() in p.get('name', '').lower()]
+            players_data = [p for p in players_data if name.lower() in p.get("name", "").lower()]
         if position:
-            players_data = [p for p in players_data if position.lower() in p.get('position', '').lower()]
+            players_data = [
+                p for p in players_data if position.lower() in p.get("position", "").lower()
+            ]
         if number:
-            players_data = [p for p in players_data if p.get('number') == number]
+            players_data = [p for p in players_data if p.get("number") == number]
 
         # Apply client-side sorting
-        if sort_by and sort_by in ['name', 'position', 'number']:
-            reverse = order.lower() == 'desc'
-            players_data = sorted(
-                players_data,
-                key=lambda x: x.get(sort_by, ''),
-                reverse=reverse
-            )
+        if sort_by and sort_by in ["name", "position", "number"]:
+            reverse = order.lower() == "desc"
+            players_data = sorted(players_data, key=lambda x: x.get(sort_by, ""), reverse=reverse)
 
         # Apply client-side pagination
         if limit:
             try:
                 limit = int(limit)
-                players_data = players_data[offset:offset+limit]
+                players_data = players_data[offset : offset + limit]
             except ValueError:
                 pass  # Ignore invalid limit values
         elif offset > 0:
@@ -401,36 +407,38 @@ def team_officials(team_id):
     """
     try:
         # Parse query parameters
-        name = request.args.get('name')
-        role = request.args.get('role')
-        limit = request.args.get('limit')
-        offset = request.args.get('offset', 0, type=int)
-        sort_by = request.args.get('sort_by', 'name')
-        order = request.args.get('order', 'asc')
+        name = request.args.get("name")
+        role = request.args.get("role")
+        limit = request.args.get("limit")
+        offset = request.args.get("offset", 0, type=int)
+        sort_by = request.args.get("sort_by", "name")
+        order = request.args.get("order", "asc")
 
         # Fetch officials data
         officials_data = client.fetch_team_officials_json(team_id)
 
         # Apply client-side filtering
         if name:
-            officials_data = [o for o in officials_data if name.lower() in o.get('name', '').lower()]
+            officials_data = [
+                o for o in officials_data if name.lower() in o.get("name", "").lower()
+            ]
         if role:
-            officials_data = [o for o in officials_data if role.lower() in o.get('role', '').lower()]
+            officials_data = [
+                o for o in officials_data if role.lower() in o.get("role", "").lower()
+            ]
 
         # Apply client-side sorting
-        if sort_by and sort_by in ['name', 'role']:
-            reverse = order.lower() == 'desc'
+        if sort_by and sort_by in ["name", "role"]:
+            reverse = order.lower() == "desc"
             officials_data = sorted(
-                officials_data,
-                key=lambda x: x.get(sort_by, ''),
-                reverse=reverse
+                officials_data, key=lambda x: x.get(sort_by, ""), reverse=reverse
             )
 
         # Apply client-side pagination
         if limit:
             try:
                 limit = int(limit)
-                officials_data = officials_data[offset:offset+limit]
+                officials_data = officials_data[offset : offset + limit]
             except ValueError:
                 pass  # Ignore invalid limit values
         elif offset > 0:
