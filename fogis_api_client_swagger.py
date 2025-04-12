@@ -2,7 +2,6 @@
 OpenAPI/Swagger documentation for the FOGIS API Gateway.
 """
 
-import os
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 from flask_swagger_ui import get_swaggerui_blueprint
@@ -23,15 +22,19 @@ spec = APISpec(
     plugins=[MarshmallowPlugin()],
 )
 
+
 # Define schemas for request/response models
 class ErrorSchema(Schema):
     """Schema for error responses."""
+
     error = fields.String(required=True, description="Human-readable error message")
     message = fields.String(required=True, description="Detailed error information")
     error_type = fields.String(required=True, description="Error type code")
 
+
 class MatchSchema(Schema):
     """Schema for match data."""
+
     id = fields.String(required=True, description="Match ID")
     home_team = fields.String(required=True, description="Home team name")
     away_team = fields.String(required=True, description="Away team name")
@@ -39,32 +42,72 @@ class MatchSchema(Schema):
     tavling = fields.String(description="Competition name")
     status = fields.String(description="Match status")
 
+
 class MatchResultSchema(Schema):
     """Schema for match result data."""
+
     id = fields.String(required=True, description="Match ID")
     home_score = fields.Integer(description="Home team score")
     away_score = fields.Integer(description="Away team score")
 
+
 class EventSchema(Schema):
     """Schema for match event data."""
+
     id = fields.String(description="Event ID")
     type = fields.String(description="Event type (e.g., goal, card, substitution)")
     player = fields.String(description="Player name")
     team = fields.String(description="Team name")
     time = fields.String(description="Event time")
 
+
+class LoginRequestSchema(Schema):
+    """Schema for login request."""
+
+    username = fields.String(required=True, description="FOGIS username")
+    password = fields.String(required=True, description="FOGIS password")
+
+
+class TokenSchema(Schema):
+    """Schema for authentication token (cookies)."""
+
+    token = fields.Dict(keys=fields.String(), values=fields.String(), description="Session cookies")
+
+
+class TokenResponseSchema(Schema):
+    """Schema for token response."""
+
+    success = fields.Boolean(required=True, description="Whether the operation was successful")
+    message = fields.String(description="Human-readable message")
+    token = fields.Dict(keys=fields.String(), values=fields.String(), description="Session cookies")
+    error = fields.String(description="Error message if operation failed")
+
+
+class TokenValidationResponseSchema(Schema):
+    """Schema for token validation response."""
+
+    success = fields.Boolean(required=True, description="Whether the operation was successful")
+    valid = fields.Boolean(description="Whether the token is valid")
+    message = fields.String(description="Human-readable message")
+    error = fields.String(description="Error message if operation failed")
+
+
 class PlayerSchema(Schema):
     """Schema for player data."""
+
     id = fields.String(description="Player ID")
     name = fields.String(description="Player name")
     position = fields.String(description="Player position")
     number = fields.String(description="Player jersey number")
 
+
 class OfficialSchema(Schema):
     """Schema for official data."""
+
     id = fields.String(description="Official ID")
     name = fields.String(description="Official name")
     role = fields.String(description="Official role")
+
 
 # Register schemas with spec
 spec.components.schema("Error", schema=ErrorSchema)
@@ -161,7 +204,11 @@ spec.path(
                     "name": "sort_by",
                     "in": "query",
                     "description": "Field to sort by",
-                    "schema": {"type": "string", "enum": ["datum", "hemmalag", "bortalag", "tavling"], "default": "datum"},
+                    "schema": {
+                        "type": "string",
+                        "enum": ["datum", "hemmalag", "bortalag", "tavling"],
+                        "default": "datum",
+                    },
                 },
                 {
                     "name": "order",
@@ -210,12 +257,32 @@ spec.path(
                         "schema": {
                             "type": "object",
                             "properties": {
-                                "from_date": {"type": "string", "format": "date", "description": "Start date for filtering matches"},
-                                "to_date": {"type": "string", "format": "date", "description": "End date for filtering matches"},
-                                "status": {"type": "string", "description": "Match status (e.g., 'upcoming', 'completed')"},
-                                "age_category": {"type": "string", "description": "Age category for filtering matches"},
-                                "gender": {"type": "string", "description": "Gender for filtering matches"},
-                                "football_type": {"type": "string", "description": "Type of football (e.g., 'indoor', 'outdoor')"},
+                                "from_date": {
+                                    "type": "string",
+                                    "format": "date",
+                                    "description": "Start date for filtering matches",
+                                },
+                                "to_date": {
+                                    "type": "string",
+                                    "format": "date",
+                                    "description": "End date for filtering matches",
+                                },
+                                "status": {
+                                    "type": "string",
+                                    "description": "Match status (e.g., 'upcoming', 'completed')",
+                                },
+                                "age_category": {
+                                    "type": "string",
+                                    "description": "Age category for filtering matches",
+                                },
+                                "gender": {
+                                    "type": "string",
+                                    "description": "Gender for filtering matches",
+                                },
+                                "football_type": {
+                                    "type": "string",
+                                    "description": "Type of football (e.g., 'indoor', 'outdoor')",
+                                },
                             },
                         }
                     }
@@ -434,7 +501,11 @@ spec.path(
                     "name": "sort_by",
                     "in": "query",
                     "description": "Field to sort by",
-                    "schema": {"type": "string", "enum": ["time", "type", "player", "team"], "default": "time"},
+                    "schema": {
+                        "type": "string",
+                        "enum": ["time", "type", "player", "team"],
+                        "default": "time",
+                    },
                 },
                 {
                     "name": "order",
@@ -494,7 +565,10 @@ spec.path(
                             "type": "object",
                             "required": ["type"],
                             "properties": {
-                                "type": {"type": "string", "description": "Event type (e.g., 'goal', 'card', 'substitution')"},
+                                "type": {
+                                    "type": "string",
+                                    "description": "Event type (e.g., 'goal', 'card', 'substitution')",
+                                },
                                 "player": {"type": "string", "description": "Player name"},
                                 "team": {"type": "string", "description": "Team name"},
                                 "time": {"type": "string", "description": "Event time"},
@@ -738,7 +812,11 @@ spec.path(
                     "name": "sort_by",
                     "in": "query",
                     "description": "Field to sort by",
-                    "schema": {"type": "string", "enum": ["name", "position", "number"], "default": "name"},
+                    "schema": {
+                        "type": "string",
+                        "enum": ["name", "position", "number"],
+                        "default": "name",
+                    },
                 },
                 {
                     "name": "order",
@@ -865,21 +943,222 @@ spec.path(
     },
 )
 
+# Authentication endpoints
+
+# Login endpoint
+spec.path(
+    path="/auth/login",
+    operations={
+        "post": {
+            "summary": "Login to FOGIS API",
+            "description": "Authenticates with FOGIS API and returns a token (cookies)",
+            "requestBody": {
+                "required": True,
+                "content": {
+                    "application/json": {
+                        "schema": {"$ref": "#/components/schemas/LoginRequestSchema"},
+                    }
+                },
+            },
+            "responses": {
+                "200": {
+                    "description": "Login successful",
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/TokenResponseSchema"},
+                        }
+                    },
+                },
+                "400": {
+                    "description": "Invalid input",
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/Error"},
+                        }
+                    },
+                },
+                "401": {
+                    "description": "Authentication failed",
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/Error"},
+                        }
+                    },
+                },
+                "500": {
+                    "description": "Server error",
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/Error"},
+                        }
+                    },
+                },
+            },
+        }
+    },
+)
+
+# Validate endpoint
+spec.path(
+    path="/auth/validate",
+    operations={
+        "post": {
+            "summary": "Validate token",
+            "description": "Checks if a token (cookies) is still valid",
+            "requestBody": {
+                "required": True,
+                "content": {
+                    "application/json": {
+                        "schema": {"$ref": "#/components/schemas/TokenSchema"},
+                    }
+                },
+            },
+            "responses": {
+                "200": {
+                    "description": "Validation result",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TokenValidationResponseSchema"
+                            },
+                        }
+                    },
+                },
+                "400": {
+                    "description": "Invalid input",
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/Error"},
+                        }
+                    },
+                },
+                "500": {
+                    "description": "Server error",
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/Error"},
+                        }
+                    },
+                },
+            },
+        }
+    },
+)
+
+# Refresh endpoint
+spec.path(
+    path="/auth/refresh",
+    operations={
+        "post": {
+            "summary": "Refresh token",
+            "description": "Refreshes a token (cookies) if it's still valid",
+            "requestBody": {
+                "required": True,
+                "content": {
+                    "application/json": {
+                        "schema": {"$ref": "#/components/schemas/TokenSchema"},
+                    }
+                },
+            },
+            "responses": {
+                "200": {
+                    "description": "Refresh successful",
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/TokenResponseSchema"},
+                        }
+                    },
+                },
+                "400": {
+                    "description": "Invalid input",
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/Error"},
+                        }
+                    },
+                },
+                "401": {
+                    "description": "Token is invalid or expired",
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/Error"},
+                        }
+                    },
+                },
+                "500": {
+                    "description": "Server error",
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/Error"},
+                        }
+                    },
+                },
+            },
+        }
+    },
+)
+
+# Logout endpoint
+spec.path(
+    path="/auth/logout",
+    operations={
+        "post": {
+            "summary": "Logout from FOGIS API",
+            "description": "Invalidates a token (cookies)",
+            "requestBody": {
+                "required": True,
+                "content": {
+                    "application/json": {
+                        "schema": {"$ref": "#/components/schemas/TokenSchema"},
+                    }
+                },
+            },
+            "responses": {
+                "200": {
+                    "description": "Logout successful",
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/TokenResponseSchema"},
+                        }
+                    },
+                },
+                "400": {
+                    "description": "Invalid input",
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/Error"},
+                        }
+                    },
+                },
+                "500": {
+                    "description": "Server error",
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": "#/components/schemas/Error"},
+                        }
+                    },
+                },
+            },
+        }
+    },
+)
+
+
 # Function to get the Swagger UI blueprint
 def get_swagger_blueprint():
     """
     Returns the Swagger UI blueprint for the FOGIS API Gateway.
     """
-    SWAGGER_URL = '/api/docs'  # URL for exposing Swagger UI
-    API_URL = '/api/swagger.json'  # URL for the API spec
+    SWAGGER_URL = "/api/docs"  # URL for exposing Swagger UI
+    API_URL = "/api/swagger.json"  # URL for the API spec
 
     # Create Swagger UI blueprint
     swagger_ui_blueprint = get_swaggerui_blueprint(
         SWAGGER_URL,
         API_URL,
         config={
-            'app_name': "FOGIS API Client",
-            'validatorUrl': None,  # Disable validator
+            "app_name": "FOGIS API Client",
+            "validatorUrl": None,  # Disable validator
         },
     )
 

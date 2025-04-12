@@ -21,10 +21,10 @@ python3 -m unittest discover || echo "Note: Some tests are failing. This is expe
 # Check if Docker is available
 if command -v docker &> /dev/null; then
     echo "Docker is available. Running Docker build tests..."
-    
+
     # Build the Docker image but don't fail if it doesn't build (temporary)
     docker build -t fogis-api-client-test -f Dockerfile.test . || echo "Note: Docker build failed. This is expected until Docker setup is fixed."
-    
+
     echo "Docker tests completed."
 else
     echo "Docker is not available. Skipping Docker build tests."

@@ -1,9 +1,10 @@
+import logging
 import os
 import signal
 import sys
-import logging
 import time
 from datetime import datetime
+
 from flask import Flask, jsonify, request
 
 try:
@@ -15,6 +16,14 @@ except ImportError:
 from fogis_api_client.fogis_api_client import FogisApiClient
 from fogis_api_client.match_list_filter import MatchListFilter
 from fogis_api_client_swagger import get_swagger_blueprint, spec
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
+)
+logger = logging.getLogger(__name__)
 
 # Get environment variables
 fogis_username = os.environ.get("FOGIS_USERNAME", "test_user")
@@ -31,16 +40,6 @@ except Exception as e:
     client = None
     client_initialized = False
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
-
 # Log startup information
 logger.info("Starting FOGIS API Gateway...")
 logger.info(f"FOGIS_USERNAME: {fogis_username}")
@@ -56,8 +55,9 @@ if CORS:
 swagger_ui_blueprint, SWAGGER_URL, API_URL = get_swagger_blueprint()
 app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
 
+
 # Add endpoint to serve the OpenAPI specification
-@app.route('/api/swagger.json')
+@app.route("/api/swagger.json")
 def get_swagger():
     return jsonify(spec.to_dict())
 
@@ -82,22 +82,21 @@ def health():
         current_time = datetime.now().isoformat()
 
         # Return a simple response
-        return jsonify({
-            "status": "healthy",
-            "timestamp": current_time,
-            "service": "fogis-api-client"
-        })
+        return jsonify(
+            {"status": "healthy", "timestamp": current_time, "service": "fogis-api-client"}
+        )
     except Exception as e:
         # Log the error but still return a 200 status code
         logger.error(f"Error in health check endpoint: {e}")
 
         # Return a simple response with the error
-        return jsonify({
-            "status": "warning",
-            "message": "Health check encountered an error but service is still responding",
-            "timestamp": time.time()
-        })
-
+        return jsonify(
+            {
+                "status": "warning",
+                "message": "Health check encountered an error but service is still responding",
+                "timestamp": time.time(),
+            }
+        )
 
 
 @app.route("/matches")

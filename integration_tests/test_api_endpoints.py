@@ -1,17 +1,17 @@
+import logging
 import os
+import time
+
 import pytest
 import requests
-import json
-import time
-import logging
 from requests.exceptions import ConnectionError, Timeout
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
 
 # Add a retry decorator for tests
 def retry_on_failure(max_retries=3, delay=2):
@@ -22,17 +22,23 @@ def retry_on_failure(max_retries=3, delay=2):
                     return func(*args, **kwargs)
                 except (ConnectionError, Timeout, AssertionError) as e:
                     if attempt < max_retries - 1:
-                        logger.warning(f"Test failed on attempt {attempt + 1}/{max_retries}: {e}. Retrying in {delay} seconds...")
+                        logger.warning(
+                            f"Test failed on attempt {attempt + 1}/{max_retries}: {e}. Retrying in {delay} seconds..."
+                        )
                         time.sleep(delay)
                     else:
                         logger.error(f"Test failed after {max_retries} attempts: {e}")
                         raise
+
         return wrapper
+
     return decorator
+
 
 # Get the API URL from environment variable or use default
 # When running in Docker, this should be set to http://fogis-api-client-dev:8080
-API_URL = os.environ.get('API_URL', 'http://localhost:8080')
+API_URL = os.environ.get("API_URL", "http://localhost:8080")
+
 
 @retry_on_failure(max_retries=5, delay=3)
 def test_health_endpoint():
@@ -61,6 +67,7 @@ def test_root_endpoint():
     assert "message" in data
     assert "FOGIS API Gateway" in data["message"]
 
+
 def test_matches_endpoint():
     """Test the /matches endpoint returns a list of matches."""
     # This endpoint might return an error if not authenticated
@@ -73,6 +80,7 @@ def test_matches_endpoint():
         data = response.json()
         assert isinstance(data, list)
 
+
 def test_match_details_endpoint():
     """Test the /match/<match_id> endpoint returns match details."""
     # This endpoint might return an error if not authenticated
@@ -84,6 +92,7 @@ def test_match_details_endpoint():
     if response.status_code == 200:
         data = response.json()
         assert isinstance(data, dict)
+
 
 if __name__ == "__main__":
     # Add a delay to ensure the API service is fully up
