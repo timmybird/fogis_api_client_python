@@ -217,6 +217,8 @@ We use pre-commit hooks to automate testing and code quality checks. This helps 
 Pre-commit hooks will:
 - Format your code with Black and isort
 - Check for common issues with flake8
+  - Note: We ignore whitespace before ':' (E203) for Black compatibility
+  - Note: We ignore lazy string interpolation (F541) as it's not a significant gain for this project
 - Verify type hints with mypy
 - Run unit tests to ensure they pass
 

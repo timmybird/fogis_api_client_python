@@ -205,6 +205,21 @@ Contributions are welcome! Please follow these steps:
 6. Push to the branch: `git push origin feature/your-feature-name`
 7. Create a pull request
 
+##### Pre-Commit Hooks
+
+We use pre-commit hooks to ensure code quality. To set up pre-commit hooks:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+The hooks will automatically run before each commit, checking for:
+- Code formatting (Black, isort)
+- Linting issues (flake8)
+- Type checking (mypy)
+- Unit test failures
+
 ##### Pre-Merge Check
 
 Before merging any changes, always run the pre-merge check script to ensure all tests pass:
