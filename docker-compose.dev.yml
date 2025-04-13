@@ -23,12 +23,13 @@ services:
       - TZ=Europe/Stockholm
     healthcheck:
       # Use a verbose health check for development to help diagnose issues
+      # Use 0.0.0.0 instead of 127.0.0.1 to ensure it works in all network configurations
       test: [
         "CMD-SHELL",
-        "curl -v http://127.0.0.1:8080/ > /tmp/health_check.log 2>&1 && \
+        "curl -v http://0.0.0.0:8080/ > /tmp/health_check.log 2>&1 && \
          echo 'Health check response:' && \
          cat /tmp/health_check.log && \
-         curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ | grep -q 200 || \
+         curl -s -o /dev/null -w '%{http_code}' http://0.0.0.0:8080/ | grep -q 200 || \
          (echo 'Health check failed:' && cat /tmp/health_check.log && exit 1)"
       ]
       interval: 15s

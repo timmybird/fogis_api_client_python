@@ -53,8 +53,9 @@ RUN mkdir -p /app/logs /app/data && \
 
 # Add health check
 # Use a more robust health check that doesn't rely on specific response format
+# Use 0.0.0.0 instead of localhost to ensure it works in all network configurations
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/health | grep -q 200 || exit 1
+    CMD curl -s -o /dev/null -w '%{http_code}' http://0.0.0.0:8080/health | grep -q 200 || exit 1
 
 # Add metadata labels
 LABEL org.opencontainers.image.title="FOGIS API Client" \
