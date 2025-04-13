@@ -57,11 +57,17 @@ The Docker configuration uses the following volumes:
 
 The Docker container includes a health check that verifies the API is responding correctly. The health check:
 
-- Calls the `/health` endpoint
+- Calls the `/health` endpoint and checks for a 200 status code
 - Runs every 30 seconds
 - Has a 10-second timeout
 - Retries 3 times before marking the container as unhealthy
 - Waits 60 seconds on startup before beginning health checks
+
+For development (in docker-compose.override.yml), a more lenient health check is used:
+- Calls the root endpoint (`/`) instead of `/health`
+- Runs more frequently (every 15 seconds)
+- Has more retries (5 times)
+- Starts checking sooner (after 30 seconds)
 
 ## Docker Compose Files
 

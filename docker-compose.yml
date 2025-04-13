@@ -25,8 +25,8 @@ services:
       - FLASK_DEBUG=${FLASK_DEBUG:-0}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     healthcheck:
-      # Simplified health check that works more reliably
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      # More robust health check that only checks for 200 status code
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/health | grep -q 200 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
