@@ -75,7 +75,8 @@ class FogisApiClient:
         Args:
             username (Optional[str]): FOGIS username. Required if cookies are not provided.
             password (Optional[str]): FOGIS password. Required if cookies are not provided.
-            cookies (Optional[Dict[str, str]]): Session cookies for authentication. If provided, username and password are not required.
+            cookies (Optional[Dict[str, str]]): Session cookies for authentication.
+                If provided, username and password are not required.
 
         Raises:
             ValueError: If neither valid credentials nor cookies are provided
@@ -413,7 +414,8 @@ class FogisApiClient:
             return response_data
         else:
             raise FogisDataError(
-                f"Expected dictionary or list response but got {type(response_data).__name__}: {response_data}"
+                f"Expected dictionary or list response but got "
+                f"{type(response_data).__name__}: {response_data}"
             )
 
     def report_match_result(self, result_data: Dict[str, Any]) -> Dict[str, Any]:
