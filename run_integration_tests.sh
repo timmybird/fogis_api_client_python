@@ -45,29 +45,22 @@ if ! docker ps | grep -q fogis-api-client-dev; then
         if docker ps | grep -q "fogis-api-client-dev.*healthy"; then
             echo "Container is healthy! Checking if API is responding..."
 
-            # Check if API is responding correctly - first try /health endpoint
-            API_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health)
-            if [ "$API_RESPONSE" = "200" ]; then
-                echo "API health endpoint is responding correctly! Proceeding with tests."
+            # Only check the root endpoint for simplicity and reliability
+            ROOT_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/)
+            if [ "$ROOT_RESPONSE" = "200" ]; then
+                echo "API root endpoint is responding correctly! Proceeding with tests."
                 break
             else
-                # If /health doesn't respond with 200, try the root endpoint
-                ROOT_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/)
-                if [ "$ROOT_RESPONSE" = "200" ]; then
-                    echo "API root endpoint is responding correctly! Proceeding with tests."
-                    break
-                else
-                    echo "Container is healthy but API returned status $API_RESPONSE for /health and $ROOT_RESPONSE for /. Waiting for API to be fully ready..."
+                echo "Container is healthy but API returned status $ROOT_RESPONSE for /. Waiting for API to be fully ready..."
 
-                    # Track how long the container has been healthy but API not responding
-                    if [ -z "$HEALTHY_START_TIME" ]; then
-                        HEALTHY_START_TIME=$(date +%s)
-                    else
-                        HEALTHY_ELAPSED=$(($(date +%s) - HEALTHY_START_TIME))
-                        if [ $HEALTHY_ELAPSED -gt 30 ]; then
-                            echo "Container has been healthy for over 30 seconds. Proceeding with tests despite API status codes."
-                            break
-                        fi
+                # Track how long the container has been healthy but API not responding
+                if [ -z "$HEALTHY_START_TIME" ]; then
+                    HEALTHY_START_TIME=$(date +%s)
+                else
+                    HEALTHY_ELAPSED=$(($(date +%s) - HEALTHY_START_TIME))
+                    if [ $HEALTHY_ELAPSED -gt 15 ]; then  # Reduced from 30 to 15 seconds
+                        echo "Container has been healthy for over 15 seconds. Proceeding with tests despite API status code $ROOT_RESPONSE."
+                        break
                     fi
                 fi
             fi
