@@ -77,17 +77,55 @@ def index():
 def health():
     """
     Health check endpoint for Docker and monitoring systems.
-    This endpoint is intentionally simple and doesn't depend on external services.
-    It should always return a 200 status code, even if there's an error.
+    This endpoint provides detailed health information about the service.
+    It should always return a 200 status code for Docker health checks to work,
+    but the response body will contain the actual health status.
     """
     try:
         # Get current timestamp
         current_time = datetime.now().isoformat()
 
-        # Return a simple response
-        return jsonify(
-            {"status": "healthy", "timestamp": current_time, "service": "fogis-api-client"}
-        )
+        # Check if the client is initialized
+        client_status = "available" if client_initialized else "unavailable"
+
+        # Get system information
+        import platform
+
+        import psutil
+
+        # Try to get memory usage
+        memory_info = {}
+        try:
+            process = psutil.Process()
+            memory_info = {
+                "memory_percent": process.memory_percent(),
+                "memory_mb": process.memory_info().rss / (1024 * 1024),  # Convert to MB
+            }
+        except Exception as mem_err:
+            memory_info = {"error": str(mem_err)}
+
+        # Build health response
+        health_data = {
+            "status": "healthy" if client_initialized else "degraded",
+            "timestamp": current_time,
+            "service": "fogis-api-client",
+            "version": "1.0.0",  # TODO: Get this from package version
+            "uptime": time.time() - process.create_time(),
+            "python": {
+                "version": platform.python_version(),
+                "implementation": platform.python_implementation(),
+            },
+            "system": {
+                "platform": platform.platform(),
+                "cpu_count": psutil.cpu_count(),
+            },
+            "process": memory_info,
+            "dependencies": {
+                "fogis_client": client_status,
+            },
+        }
+
+        return jsonify(health_data)
     except Exception as e:
         # Log the error but still return a 200 status code
         logger.error(f"Error in health check endpoint: {e}")
@@ -98,6 +136,7 @@ def health():
                 "status": "warning",
                 "message": "Health check encountered an error but service is still responding",
                 "timestamp": time.time(),
+                "error": str(e),
             }
         )
 
