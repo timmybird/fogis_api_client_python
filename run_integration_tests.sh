@@ -28,6 +28,7 @@ if ! docker ps | grep -q fogis-api-client-dev; then
     echo "Waiting for API service to be healthy..."
     TIMEOUT=120  # 2 minutes timeout
     START_TIME=$(date +%s)
+    HEALTHY_START_TIME=""  # Initialize variable to track how long container has been healthy
 
     # Try to manually check if the service is responding
     echo "Checking if API service is responding..."
@@ -44,14 +45,35 @@ if ! docker ps | grep -q fogis-api-client-dev; then
         if docker ps | grep -q "fogis-api-client-dev.*healthy"; then
             echo "Container is healthy! Checking if API is responding..."
 
-            # Check if API is responding correctly
+            # Check if API is responding correctly - first try /health endpoint
             API_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health)
             if [ "$API_RESPONSE" = "200" ]; then
-                echo "API is responding correctly! Proceeding with tests."
+                echo "API health endpoint is responding correctly! Proceeding with tests."
                 break
             else
-                echo "Container is healthy but API returned status $API_RESPONSE. Waiting for API to be fully ready..."
+                # If /health doesn't respond with 200, try the root endpoint
+                ROOT_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/)
+                if [ "$ROOT_RESPONSE" = "200" ]; then
+                    echo "API root endpoint is responding correctly! Proceeding with tests."
+                    break
+                else
+                    echo "Container is healthy but API returned status $API_RESPONSE for /health and $ROOT_RESPONSE for /. Waiting for API to be fully ready..."
+
+                    # Track how long the container has been healthy but API not responding
+                    if [ -z "$HEALTHY_START_TIME" ]; then
+                        HEALTHY_START_TIME=$(date +%s)
+                    else
+                        HEALTHY_ELAPSED=$(($(date +%s) - HEALTHY_START_TIME))
+                        if [ $HEALTHY_ELAPSED -gt 30 ]; then
+                            echo "Container has been healthy for over 30 seconds. Proceeding with tests despite API status codes."
+                            break
+                        fi
+                    fi
+                fi
             fi
+        else
+            # Reset the healthy start time if container becomes unhealthy
+            HEALTHY_START_TIME=""
         fi
         CURRENT_TIME=$(date +%s)
         ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
