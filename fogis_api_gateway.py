@@ -70,7 +70,96 @@ def index():
     """
     Test endpoint to verify the API is running.
     """
+    logger.info(f"Root endpoint requested from {request.remote_addr}")
     return jsonify({"status": "ok", "message": "FOGIS API Gateway"})
+
+
+@app.route("/debug")
+def debug():
+    """
+    Debug endpoint to help diagnose health check issues.
+    This endpoint provides detailed information about the service and its environment.
+    """
+    import os
+    import platform
+    import socket
+    import sys
+
+    import psutil
+
+    # Log request details
+    logger.info(f"Debug endpoint requested from {request.remote_addr}")
+
+    # Get network information
+    hostname = socket.gethostname()
+    ip_addresses = {}
+    try:
+        # Get all network interfaces
+        for interface, addrs in psutil.net_if_addrs().items():
+            ip_addresses[interface] = [
+                addr.address for addr in addrs if addr.family == socket.AF_INET
+            ]
+    except Exception as net_err:
+        ip_addresses = {"error": str(net_err)}
+
+    # Get environment variables (excluding sensitive ones)
+    env_vars = {}
+    for key, value in os.environ.items():
+        if (
+            "password" not in key.lower()
+            and "secret" not in key.lower()
+            and "key" not in key.lower()
+        ):
+            env_vars[key] = value
+
+    # Get Docker-specific information
+    docker_info = {}
+    try:
+        # Check if running in Docker
+        in_docker = os.path.exists("/.dockerenv")
+        docker_info["in_docker"] = in_docker
+
+        # Get container ID if in Docker
+        if in_docker:
+            try:
+                with open("/proc/self/cgroup", "r") as f:
+                    docker_info["container_id"] = f.read()
+            except Exception as e:
+                docker_info["container_id_error"] = str(e)
+    except Exception as docker_err:
+        docker_info["error"] = str(docker_err)
+
+    # Build debug response
+    debug_data = {
+        "timestamp": datetime.now().isoformat(),
+        "service": "fogis-api-client",
+        "client_initialized": client_initialized,
+        "network": {
+            "hostname": hostname,
+            "ip_addresses": ip_addresses,
+            "request_remote_addr": request.remote_addr,
+            "request_host": request.host,
+        },
+        "system": {
+            "platform": platform.platform(),
+            "python_version": platform.python_version(),
+            "cpu_count": psutil.cpu_count(),
+            "memory": dict(psutil.virtual_memory()._asdict()),
+        },
+        "process": {
+            "pid": os.getpid(),
+            "cwd": os.getcwd(),
+            "memory_usage_mb": psutil.Process().memory_info().rss / (1024 * 1024),
+        },
+        "docker": docker_info,
+        "environment": env_vars,
+        "python_path": sys.path,
+    }
+
+    # Log the response
+    logger.info("Debug endpoint response generated")
+
+    return jsonify(debug_data)
 
 
 @app.route("/health")
@@ -81,6 +170,10 @@ def health():
     It should always return a 200 status code for Docker health checks to work,
     but the response body will contain the actual health status.
     """
+    # Log request details for debugging
+    logger.info(f"Health check requested from {request.remote_addr}")
+    logger.info(f"Request headers: {dict(request.headers)}")
+
     try:
         # Get current timestamp
         current_time = datetime.now().isoformat()
@@ -90,8 +183,21 @@ def health():
 
         # Get system information
         import platform
+        import socket
 
         import psutil
+
+        # Get network information
+        hostname = socket.gethostname()
+        ip_addresses = {}
+        try:
+            # Get all network interfaces
+            for interface, addrs in psutil.net_if_addrs().items():
+                ip_addresses[interface] = [
+                    addr.address for addr in addrs if addr.family == socket.AF_INET
+                ]
+        except Exception as net_err:
+            ip_addresses = {"error": str(net_err)}
 
         # Try to get memory usage
         memory_info = {}
@@ -118,6 +224,8 @@ def health():
             "system": {
                 "platform": platform.platform(),
                 "cpu_count": psutil.cpu_count(),
+                "hostname": hostname,
+                "ip_addresses": ip_addresses,
             },
             "process": memory_info,
             "dependencies": {
@@ -125,10 +233,14 @@ def health():
             },
         }
 
+        # Log the response for debugging
+        logger.info(f"Health check response: {health_data}")
+
         return jsonify(health_data)
     except Exception as e:
         # Log the error but still return a 200 status code
         logger.error(f"Error in health check endpoint: {e}")
+        logger.exception("Health check exception details:")
 
         # Return a simple response with the error
         return jsonify(

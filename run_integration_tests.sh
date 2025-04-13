@@ -62,6 +62,10 @@ if ! docker ps | grep -q fogis-api-client-dev; then
     echo "Final API check before proceeding:"
     curl -v http://localhost:8080/
     echo ""
+
+    # Get debug information to help diagnose health check issues
+    echo "Getting debug information:"
+    curl -s http://localhost:8080/debug | jq . || echo "Debug endpoint failed"
 fi
 
 # Run the integration tests

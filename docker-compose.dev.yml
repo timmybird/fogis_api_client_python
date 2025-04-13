@@ -22,8 +22,15 @@ services:
       - FLASK_DEBUG=1
       - TZ=Europe/Stockholm
     healthcheck:
-      # Use a more lenient health check for development that only checks the root endpoint
-      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ | grep -q 200 || exit 1"]
+      # Use a verbose health check for development to help diagnose issues
+      test: [
+        "CMD-SHELL",
+        "curl -v http://127.0.0.1:8080/ > /tmp/health_check.log 2>&1 && \
+         echo 'Health check response:' && \
+         cat /tmp/health_check.log && \
+         curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ | grep -q 200 || \
+         (echo 'Health check failed:' && cat /tmp/health_check.log && exit 1)"
+      ]
       interval: 15s
       timeout: 10s
       retries: 10

@@ -22,10 +22,13 @@ COPY . .
 RUN pip install --no-cache-dir -e .
 RUN pip install --no-cache-dir flask-cors pytest pytest-flask watchdog psutil
 
-# Add health check for development
-# Use a more lenient health check that only checks the root endpoint
+# Add health check for development with verbose output for debugging
 HEALTHCHECK --interval=15s --timeout=10s --start-period=30s --retries=5 \
-    CMD curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/ | grep -q 200 || exit 1
+    CMD curl -v http://localhost:8080/ > /tmp/health_check.log 2>&1 && \
+        echo "Health check response:" && \
+        cat /tmp/health_check.log && \
+        curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/ | grep -q 200 || \
+        (echo "Health check failed:" && cat /tmp/health_check.log && exit 1)
 
 # Command to run when the container starts - the Flask API Gateway with auto-reload
 CMD ["python", "fogis_api_gateway.py"]
