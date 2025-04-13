@@ -24,104 +24,48 @@ if ! docker ps | grep -q fogis-api-client-dev; then
     echo "Starting API service in the background..."
     docker compose -f docker-compose.dev.yml up -d fogis-api-client
 
-    # Wait for the service to be healthy with a timeout
-    echo "Waiting for API service to be healthy..."
-    TIMEOUT=120  # 2 minutes timeout
-    START_TIME=$(date +%s)
-    HEALTHY_START_TIME=""  # Initialize variable to track how long container has been healthy
+    # Simple wait for the service to start
+    echo "Waiting for API service to start..."
+    sleep 15  # Give the container time to start
 
-    # Try to manually check if the service is responding
-    echo "Checking if API service is responding..."
-    echo "Docker container status:"
-    docker ps
-    echo "Docker container logs:"
-    docker logs fogis-api-client-dev
-    echo "Trying to access API from host:"
-    curl -v http://localhost:8080/ || echo "Initial curl check failed, but continuing..."
+    # Check if the container is running
+    if docker ps | grep -q fogis-api-client-dev; then
+        echo "Container is running. Checking if API is responding..."
 
-    # Check container status every 5 seconds
-    while true; do
-        # Check if container is healthy
-        if docker ps | grep -q "fogis-api-client-dev.*healthy"; then
-            echo "Container is healthy! Checking if API is responding..."
+        # Try to access the API
+        RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ || echo "failed")
 
-            # Check if API is responding correctly - first try /health endpoint
-            API_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health)
-            if [ "$API_RESPONSE" = "200" ]; then
-                echo "API health endpoint is responding correctly! Proceeding with tests."
-                break
-            else
-                # If /health doesn't respond with 200, try the root endpoint
-                ROOT_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/)
-                if [ "$ROOT_RESPONSE" = "200" ]; then
-                    echo "API root endpoint is responding correctly! Proceeding with tests."
-                    break
-                else
-                    echo "Container is healthy but API returned status $API_RESPONSE for /health and $ROOT_RESPONSE for /. Waiting for API to be fully ready..."
-
-                    # Track how long the container has been healthy but API not responding
-                    if [ -z "$HEALTHY_START_TIME" ]; then
-                        HEALTHY_START_TIME=$(date +%s)
-                    else
-                        HEALTHY_ELAPSED=$(($(date +%s) - HEALTHY_START_TIME))
-                        if [ $HEALTHY_ELAPSED -gt 30 ]; then
-                            echo "Container has been healthy for over 30 seconds. Proceeding with tests despite API status codes."
-                            break
-                        fi
-                    fi
-                fi
-            fi
+        if [ "$RESPONSE" = "200" ]; then
+            echo "API is responding with 200 OK. Proceeding with tests."
         else
-            # Reset the healthy start time if container becomes unhealthy
-            HEALTHY_START_TIME=""
-        fi
-        CURRENT_TIME=$(date +%s)
-        ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+            echo "API returned status $RESPONSE. Waiting a bit longer..."
+            sleep 15  # Wait a bit longer
 
-        # Check container status in more detail
-        echo "Current container status:"
-        docker ps | grep fogis-api-client-dev || echo "Container not found!"
-
-        # Try to access the API directly
-        echo "Trying to access the API directly:"
-        curl -v http://localhost:8080/ || echo "Curl check failed"
-
-        # Check if the container is running but unhealthy
-        if docker ps | grep -q "fogis-api-client-dev.*unhealthy"; then
-            echo "Container is unhealthy. Checking logs:"
-            docker logs fogis-api-client-dev --tail 20
-        fi
-
-        if [ $ELAPSED_TIME -gt $TIMEOUT ]; then
-            echo "Timeout waiting for API service to become healthy after $TIMEOUT seconds."
-            echo "Checking container logs for errors:"
-            docker logs fogis-api-client-dev
-            echo "Container status:"
-            docker ps | grep fogis-api-client-dev || echo "Container not found!"
-
-            # Try to restart the container
-            echo "Attempting to restart the container..."
-            docker restart fogis-api-client-dev || echo "Failed to restart container"
-            sleep 10
-
-            # Check if it's healthy now
-            if docker ps | grep -q "fogis-api-client-dev.*healthy"; then
-                echo "Container is now healthy after restart!"
-                break
+            # Try one more time
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ || echo "failed")
+            if [ "$RESPONSE" = "200" ]; then
+                echo "API is now responding with 200 OK. Proceeding with tests."
             else
-                echo "Container is still unhealthy after restart. Continuing anyway..."
-                break
+                echo "API still returned status $RESPONSE. Proceeding with tests anyway."
+                # Show container logs for debugging
+                echo "Container logs:"
+                docker logs fogis-api-client-dev --tail 20
             fi
         fi
-
-        echo "Still waiting... ($ELAPSED_TIME seconds elapsed)"
-        sleep 5
-    done
+    else
+        echo "Container is not running! Starting it..."
+        docker compose -f docker-compose.dev.yml up -d fogis-api-client
+        sleep 15  # Wait for container to start
+    fi
 
     # Final check to confirm API is responding
     echo "Final API check before proceeding:"
     curl -v http://localhost:8080/
     echo ""
+
+    # Get debug information to help diagnose health check issues
+    echo "Getting debug information:"
+    curl -s http://localhost:8080/debug | jq . || echo "Debug endpoint failed"
 fi
 
 # Run the integration tests
