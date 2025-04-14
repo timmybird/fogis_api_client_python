@@ -146,6 +146,84 @@ except FogisAPIRequestError as e:
     print(f"API request error: {e}")
 ```
 
+## Docker Usage
+
+The FOGIS API Client can be run inside a Docker container, which provides a consistent environment and simplifies deployment.
+
+### Using the Pre-built Docker Image
+
+```bash
+# Pull the Docker image
+docker pull timmybird/fogis_api_client_python:latest
+
+# Run a script using the Docker image
+docker run --rm -v $(pwd):/app timmybird/fogis_api_client_python:latest python /app/your_script.py
+```
+
+### Building the Docker Image Locally
+
+```bash
+# Clone the repository
+git clone https://github.com/timmybird/fogis_api_client_python.git
+cd fogis_api_client_python
+
+# Build the Docker image
+docker build -t fogis_api_client .
+
+# Run a script using the local image
+docker run --rm -v $(pwd):/app fogis_api_client python /app/your_script.py
+```
+
+### Example Docker Script
+
+Create a file named `docker_example.py` with the following content:
+
+```python
+import os
+import logging
+from fogis_api_client import FogisApiClient
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
+# Get credentials from environment variables
+username = os.environ.get("FOGIS_USERNAME")
+password = os.environ.get("FOGIS_PASSWORD")
+
+# Initialize the client
+client = FogisApiClient(username=username, password=password)
+
+# Fetch matches
+matches = client.fetch_matches_list_json()
+print(f"Found {len(matches)} matches")
+
+# Display the next 3 matches
+for match in matches[:3]:
+    print(f"{match['datum']} {match['tid']}: {match['hemmalag']} vs {match['bortalag']}")
+```
+
+Run the script with Docker, passing the credentials as environment variables:
+
+```bash
+docker run --rm -v $(pwd):/app \
+  -e FOGIS_USERNAME="your_username" \
+  -e FOGIS_PASSWORD="your_password" \
+  timmybird/fogis_api_client_python:latest \
+  python /app/docker_example.py
+```
+
+### Development with Docker
+
+For development purposes, you can use the provided development script:
+
+```bash
+# Start the development environment
+./dev.sh
+
+# Inside the container, you can run tests and develop
+python -m unittest discover tests
+```
+
 ## Next Steps
 
 - Explore the [API Reference](api_reference.md) for detailed information about all available methods

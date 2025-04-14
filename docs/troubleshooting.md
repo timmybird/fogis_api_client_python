@@ -9,8 +9,9 @@ This guide provides solutions for common issues you might encounter when using t
 3. [Data Errors](#data-errors)
 4. [Match Reporting Issues](#match-reporting-issues)
 5. [Performance Issues](#performance-issues)
-6. [Common Error Messages](#common-error-messages)
-7. [Frequently Asked Questions](#frequently-asked-questions)
+6. [Docker Issues](#docker-issues)
+7. [Common Error Messages](#common-error-messages)
+8. [Frequently Asked Questions](#frequently-asked-questions)
 
 ## Authentication Issues
 
@@ -479,76 +480,117 @@ def report_goal_with_updated_score(client, match_id, team_id, player_id, minute,
 2. Use more specific queries to reduce data size
 3. Implement asynchronous requests for parallel processing
 
-**Example:**
-```python
-import functools
-import time
+## Docker Issues
 
-# Simple cache implementation
-def cache_with_timeout(timeout_seconds=300):
-    cache = {}
-
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            key = str(args) + str(kwargs)
-            current_time = time.time()
-
-            if key in cache:
-                result, timestamp = cache[key]
-                if current_time - timestamp < timeout_seconds:
-                    print(f"Using cached result for {func.__name__}")
-                    return result
-
-            result = func(*args, **kwargs)
-            cache[key] = (result, current_time)
-            return result
-
-        return wrapper
-
-    return decorator
-
-# Usage
-@cache_with_timeout(timeout_seconds=60)
-def get_match_with_cache(client, match_id):
-    return client.fetch_match_json(match_id)
-```
-
-### Issue: Memory Usage
+### Issue: Volume Mounting Problems
 
 **Symptoms:**
-- High memory usage when processing large data sets
-- Out of memory errors
+- `FileNotFoundError: [Errno 2] No such file or directory: '/app/your_script.py'`
+- Unable to access files from the host machine
 
 **Possible Causes:**
-- Large match lists being loaded into memory
-- Inefficient data processing
-- Memory leaks
+- Incorrect volume mounting syntax
+- Relative paths instead of absolute paths
+- Permissions issues on the host directory
 
 **Solutions:**
-1. Process data in chunks
-2. Use generators for large data sets
-3. Implement pagination for large queries
+1. Use absolute paths for volume mounting
+2. Verify the host directory exists
+3. Check file permissions on the host directory
 
 **Example:**
-```python
-def process_matches_in_chunks(client, chunk_size=50):
-    # Get all matches
-    all_matches = client.fetch_matches_list_json()
-    total_matches = len(all_matches)
+```bash
+# Correct volume mounting (using absolute path)
+docker run --rm -v "$(pwd):/app" timmybird/fogis_api_client_python:latest python /app/your_script.py
 
-    # Process in chunks
-    for i in range(0, total_matches, chunk_size):
-        chunk = all_matches[i:i+chunk_size]
-        print(f"Processing matches {i+1} to {min(i+chunk_size, total_matches)} of {total_matches}")
+# On Windows PowerShell
+docker run --rm -v "${PWD}:/app" timmybird/fogis_api_client_python:latest python /app/your_script.py
 
-        # Process this chunk
-        for match in chunk:
-            # Do something with each match
-            process_match(match)
+# On Windows Command Prompt
+docker run --rm -v "%cd%:/app" timmybird/fogis_api_client_python:latest python /app/your_script.py
+```
 
-        # Free memory
-        del chunk
+### Issue: Environment Variable Problems
+
+**Symptoms:**
+- `FogisLoginError: Login failed: No credentials provided and no cookies available`
+- Authentication fails when using environment variables
+
+**Possible Causes:**
+- Environment variables not passed to the container
+- Incorrect environment variable names
+- Quotes or special characters in passwords not properly escaped
+
+**Solutions:**
+1. Verify environment variables are passed correctly with `-e` flags
+2. Check for typos in environment variable names
+3. Properly escape special characters in passwords
+
+**Example:**
+```bash
+# Passing environment variables correctly
+docker run --rm -v "$(pwd):/app" \
+  -e FOGIS_USERNAME="your_username" \
+  -e FOGIS_PASSWORD="your_password" \
+  timmybird/fogis_api_client_python:latest \
+  python /app/your_script.py
+
+# For passwords with special characters, use single quotes around the password
+docker run --rm -v "$(pwd):/app" \
+  -e FOGIS_USERNAME="your_username" \
+  -e FOGIS_PASSWORD='your$pecial@password' \
+  timmybird/fogis_api_client_python:latest \
+  python /app/your_script.py
+```
+
+### Issue: Docker Image Not Found
+
+**Symptoms:**
+- `Error: No such image: timmybird/fogis_api_client_python:latest`
+- Unable to run the Docker container
+
+**Possible Causes:**
+- Image not pulled from Docker Hub
+- Typo in the image name
+- Network connectivity issues
+
+**Solutions:**
+1. Pull the image explicitly before running
+2. Check for typos in the image name
+3. Verify network connectivity to Docker Hub
+
+**Example:**
+```bash
+# Pull the image explicitly
+docker pull timmybird/fogis_api_client_python:latest
+
+# Verify the image is available
+docker images | grep fogis_api_client
+```
+
+### Issue: Permission Denied in Container
+
+**Symptoms:**
+- `PermissionError: [Errno 13] Permission denied`
+- Unable to write to mounted volumes
+
+**Possible Causes:**
+- File ownership issues in the container
+- Read-only mounted volumes
+- SELinux or AppArmor restrictions
+
+**Solutions:**
+1. Check file permissions on the host
+2. Run the container with the same user ID as the host user
+3. Temporarily disable SELinux or AppArmor for testing
+
+**Example:**
+```bash
+# Run the container with the current user's UID
+docker run --rm -v "$(pwd):/app" \
+  --user "$(id -u):$(id -g)" \
+  timmybird/fogis_api_client_python:latest \
+  python /app/your_script.py
 ```
 
 ## Common Error Messages

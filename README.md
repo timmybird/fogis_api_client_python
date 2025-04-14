@@ -33,6 +33,22 @@ cd fogis_api_client_python
 pip install -e .
 ```
 
+### Using Docker
+
+```bash
+# Pull the Docker image
+docker pull timmybird/fogis_api_client_python:latest
+
+# Run a script using the Docker image
+docker run --rm -v $(pwd):/app \
+  -e FOGIS_USERNAME="your_username" \
+  -e FOGIS_PASSWORD="your_password" \
+  timmybird/fogis_api_client_python:latest \
+  python /app/your_script.py
+```
+
+See the [Docker Usage](docs/getting_started.md#docker-usage) section in the documentation for more details.
+
 ## Quick Start
 
 ```python
