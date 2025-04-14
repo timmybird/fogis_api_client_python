@@ -1,0 +1,153 @@
+# Getting Started with FOGIS API Client
+
+This guide will help you get started with the FOGIS API Client library for interacting with the Swedish Football Association's FOGIS system.
+
+## Installation
+
+### Using pip
+
+The simplest way to install the FOGIS API Client is using pip:
+
+```bash
+pip install fogis-api-client-timmyBird
+```
+
+### From Source
+
+If you prefer to install from source:
+
+```bash
+git clone https://github.com/timmybird/fogis_api_client_python.git
+cd fogis_api_client_python
+pip install -e .
+```
+
+## Basic Configuration
+
+### Setting Up Logging
+
+The FOGIS API Client uses Python's built-in logging module. It's recommended to configure logging to see what's happening:
+
+```python
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# For more detailed logs during development
+# logging.basicConfig(level=logging.DEBUG)
+```
+
+## Authentication Methods
+
+The FOGIS API Client supports two authentication methods:
+
+### 1. Username and Password Authentication
+
+This is the simplest method, but requires storing credentials:
+
+```python
+from fogis_api_client import FogisApiClient
+
+# Initialize with username and password
+client = FogisApiClient(
+    username="your_fogis_username",
+    password="your_fogis_password"
+)
+
+# The client implements lazy login - it will authenticate automatically when needed
+# You can also explicitly login if you want to pre-authenticate
+client.login()
+```
+
+### 2. Cookie-Based Authentication (Recommended)
+
+For improved security, you can authenticate using cookies instead of storing credentials:
+
+```python
+from fogis_api_client import FogisApiClient
+
+# First, get cookies from a logged-in session
+client = FogisApiClient(username="your_username", password="your_password")
+client.login()
+cookies = client.get_cookies()  # Save these cookies securely
+
+# Later, in another session, use the saved cookies
+client = FogisApiClient(cookies=cookies)
+# No need to call login() - already authenticated with cookies
+```
+
+#### Validating Cookies
+
+You can check if the cookies are still valid:
+
+```python
+client = FogisApiClient(cookies=cookies)
+if client.validate_cookies():
+    print("Cookies are valid")
+else:
+    print("Cookies have expired, need to login with credentials again")
+```
+
+## Environment Variables
+
+For security, you can use environment variables for credentials:
+
+```python
+import os
+from fogis_api_client import FogisApiClient
+
+# Get credentials from environment variables
+username = os.environ.get("FOGIS_USERNAME")
+password = os.environ.get("FOGIS_PASSWORD")
+
+client = FogisApiClient(username=username, password=password)
+```
+
+## Basic Usage Examples
+
+### Fetching Match List
+
+```python
+from fogis_api_client import FogisApiClient, FogisLoginError, FogisAPIRequestError
+
+try:
+    client = FogisApiClient(username="your_username", password="your_password")
+    matches = client.fetch_matches_list_json()
+
+    if matches:
+        print(f"Found {len(matches)} matches.")
+        for match in matches:
+            print(f"{match['datum']} - {match['hemmalag']} vs {match['bortalag']}")
+    else:
+        print("No matches found.")
+
+except FogisLoginError as e:
+    print(f"Login failed: {e}")
+except FogisAPIRequestError as e:
+    print(f"API request error: {e}")
+```
+
+### Fetching Match Details
+
+```python
+try:
+    match_id = 123456  # Replace with actual match ID
+    match = client.fetch_match_json(match_id)
+
+    print(f"Match: {match['hemmalag']} vs {match['bortalag']}")
+    print(f"Date: {match['datum']}")
+    print(f"Venue: {match['arena']}")
+
+except FogisAPIRequestError as e:
+    print(f"API request error: {e}")
+```
+
+## Next Steps
+
+- Explore the [API Reference](api_reference.md) for detailed information about all available methods
+- Check out the [User Guides](user_guides/README.md) for step-by-step instructions for common tasks
+- See the [Troubleshooting](troubleshooting.md) section if you encounter any issues
