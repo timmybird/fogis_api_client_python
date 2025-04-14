@@ -402,28 +402,28 @@ class TestFogisApiClient(unittest.TestCase):
 
     def test_event_types_dictionary(self):
         """Test that the event_types dictionary is present and properly formatted."""
-        from fogis_api_client.fogis_api_client import event_types
+        from fogis_api_client.event_types import EVENT_TYPES
 
-        # Check that event_types is a dictionary
-        self.assertIsInstance(event_types, dict)
+        # Check that EVENT_TYPES is a dictionary
+        self.assertIsInstance(EVENT_TYPES, dict)
 
         # Check that it has the expected keys and structure
-        self.assertIn(6, event_types)  # Regular Goal
-        self.assertIn(20, event_types)  # Yellow Card
-        self.assertIn(17, event_types)  # Substitution
+        self.assertIn(6, EVENT_TYPES)  # Regular Goal
+        self.assertIn(20, EVENT_TYPES)  # Yellow Card
+        self.assertIn(17, EVENT_TYPES)  # Substitution
 
         # Check the structure of an entry
-        self.assertIn("name", event_types[6])
-        self.assertIn("goal", event_types[6])
-        self.assertEqual(event_types[6]["name"], "Regular Goal")
-        self.assertTrue(event_types[6]["goal"])
+        self.assertIn("name", EVENT_TYPES[6])
+        self.assertIn("goal", EVENT_TYPES[6])
+        self.assertEqual(EVENT_TYPES[6]["name"], "Regular Goal")
+        self.assertTrue(EVENT_TYPES[6]["goal"])
 
         # Check a non-goal event
-        self.assertFalse(event_types[20]["goal"])
+        self.assertFalse(EVENT_TYPES[20]["goal"])
 
         # Check a control event
-        self.assertIn("control_event", event_types[31])
-        self.assertTrue(event_types[31]["control_event"])
+        self.assertIn("control_event", EVENT_TYPES[31])
+        self.assertTrue(EVENT_TYPES[31]["control_event"])
 
     def test_report_team_official_action(self):
         """Unit test for report_team_official_action method."""

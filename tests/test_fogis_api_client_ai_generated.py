@@ -196,10 +196,10 @@ class TestFogisApiClient(unittest.TestCase):
         # Create event data
         event_data = {
             "matchid": "123",
-            "handelseid": 0,  # 0 indicates a new event
-            "typ": "goal",
+            "handelsekod": 6,  # Regular goal
+            "lagid": "789",
             "minut": 35,
-            "spelareid": "456",
+            "personid": "456",
         }
 
         # Mock the _api_request method to return a valid response
