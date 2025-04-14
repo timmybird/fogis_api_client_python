@@ -52,11 +52,10 @@ See the [Docker Usage](docs/getting_started.md#docker-usage) section in the docu
 ## Quick Start
 
 ```python
-import logging
-from fogis_api_client import FogisApiClient, FogisLoginError, FogisAPIRequestError
+from fogis_api_client import FogisApiClient, FogisLoginError, FogisAPIRequestError, configure_logging
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configure logging with enhanced options
+configure_logging(level="INFO")
 
 # Initialize with credentials
 client = FogisApiClient(username="your_username", password="your_password")
