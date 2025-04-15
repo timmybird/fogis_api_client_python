@@ -11,15 +11,8 @@ from typing import Dict, List
 
 from flask import Flask, Response, jsonify, request, session
 
-# Import sample data for the mock server
-from integration_tests.sample_data import (
-    SAMPLE_MATCH,
-    SAMPLE_MATCH_EVENTS,
-    SAMPLE_MATCH_LIST,
-    SAMPLE_MATCH_OFFICIALS,
-    SAMPLE_MATCH_PLAYERS,
-    SAMPLE_MATCH_RESULT,
-)
+# Import data factory for the mock server
+from integration_tests.sample_data_factory import MockDataFactory
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -128,41 +121,11 @@ class MockFogisServer:
             # Parse filter from request (not used in mock implementation)
             # request.json would contain filter parameters in a real implementation
 
-            # Apply filters if provided (simplified implementation)
-            matches = SAMPLE_MATCH_LIST["matcher"]
-
-            # Make sure we have at least one match
-            if not matches:
-                matches = [
-                    {
-                        "matchid": 12345,
-                        "matchnr": "123456",
-                        "datum": "2023-09-15",
-                        "tid": "19:00",
-                        "hemmalag": "Home Team FC",
-                        "bortalag": "Away Team United",
-                        "hemmalagid": 1001,
-                        "bortalagid": 1002,
-                        "arena": "Sample Arena",
-                        "status": "Fastställd",
-                        "domare": "Referee Name",
-                        "ad1": "Assistant 1",
-                        "ad2": "Assistant 2",
-                        "fjarde": "",
-                        "matchtyp": "Serie",
-                        "tavling": "Sample League",
-                        "grupp": "Division 1",
-                        "hemmamal": None,
-                        "bortamal": None,
-                        "publik": None,
-                        "notering": None,
-                        "rapportstatus": "Ej påbörjad",
-                        "matchstart": None,
-                    }
-                ]
+            # Generate a fresh match list using the factory
+            match_list_response = MockDataFactory.generate_match_list()
 
             # Return the response
-            return jsonify({"d": json.dumps({"matcher": matches})})
+            return jsonify(match_list_response)
 
         # Match details endpoint
         @self.app.route("/mdk/MatchWebMetoder.aspx/HamtaMatch", methods=["POST"])
@@ -175,10 +138,8 @@ class MockFogisServer:
             data = request.json or {}
             match_id = data.get("matchid")
 
-            # Return the sample match data
-            match_data = SAMPLE_MATCH.copy()
-            if match_id:
-                match_data["matchid"] = int(match_id)
+            # Generate match details using the factory
+            match_data = MockDataFactory.generate_match_details(match_id)
 
             return jsonify({"d": json.dumps(match_data)})
 
@@ -189,11 +150,12 @@ class MockFogisServer:
             if auth_result is not True:
                 return auth_result
 
-            # Get match ID from request (not used in mock implementation)
-            # In a real implementation, we would filter players based on match_id
+            # Get match ID from request
+            data = request.json or {}
+            match_id = data.get("matchid")
 
-            # Return the sample player data
-            players_data = SAMPLE_MATCH_PLAYERS.copy()
+            # Generate players data using the factory
+            players_data = MockDataFactory.generate_match_players(match_id)
 
             return jsonify({"d": json.dumps(players_data)})
 
@@ -204,11 +166,12 @@ class MockFogisServer:
             if auth_result is not True:
                 return auth_result
 
-            # Get match ID from request (not used in mock implementation)
-            # In a real implementation, we would filter officials based on match_id
+            # Get match ID from request
+            data = request.json or {}
+            match_id = data.get("matchid")
 
-            # Return the sample officials data
-            officials_data = SAMPLE_MATCH_OFFICIALS.copy()
+            # Generate officials data using the factory
+            officials_data = MockDataFactory.generate_match_officials(match_id)
 
             return jsonify({"d": json.dumps(officials_data)})
 
@@ -219,11 +182,12 @@ class MockFogisServer:
             if auth_result is not True:
                 return auth_result
 
-            # Get match ID from request (not used in mock implementation)
-            # In a real implementation, we would filter events based on match_id
+            # Get match ID from request
+            data = request.json or {}
+            match_id = data.get("matchid")
 
-            # Return the sample events data
-            events_data = SAMPLE_MATCH_EVENTS.copy()
+            # Generate events data using the factory
+            events_data = MockDataFactory.generate_match_events(match_id)
 
             return jsonify({"d": json.dumps(events_data)})
 
@@ -234,11 +198,12 @@ class MockFogisServer:
             if auth_result is not True:
                 return auth_result
 
-            # Get match ID from request (not used in mock implementation)
-            # In a real implementation, we would filter results based on match_id
+            # Get match ID from request
+            data = request.json or {}
+            match_id = data.get("matchid")
 
-            # Return the sample result data
-            result_data = SAMPLE_MATCH_RESULT.copy()
+            # Generate result data using the factory
+            result_data = MockDataFactory.generate_match_result(match_id)
 
             return jsonify({"d": json.dumps(result_data)})
 
