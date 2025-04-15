@@ -19,7 +19,7 @@ class TestFogisApiClient(unittest.TestCase):
         # Set up logging capture
         self.log_capture = io.StringIO()
         self.log_handler = logging.StreamHandler(self.log_capture)
-        self.logger = logging.getLogger("fogis_api_client.fogis_api_client")
+        self.logger = logging.getLogger("fogis_api_client.api")
         self.logger.addHandler(self.log_handler)
         self.logger.setLevel(logging.INFO)
 

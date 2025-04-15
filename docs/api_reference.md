@@ -8,6 +8,7 @@ This document provides detailed information about the FOGIS API Client classes, 
 - [Exception Classes](#exception-classes)
 - [Data Types](#data-types)
 - [Event Types](#event-types)
+- [Logging Utilities](#logging-utilities)
 
 ## FogisApiClient Class
 
@@ -729,3 +730,144 @@ The FOGIS API Client defines several event types for match events:
 - `31`: Period Start
 - `32`: Period End
 - `23`: Match Slut (Match End)
+
+## Logging Utilities
+
+The FOGIS API Client provides several utilities for configuring and using logging.
+
+### configure_logging
+
+```python
+configure_logging(level=logging.INFO, format_string=None, log_file=None, log_to_console=True, log_to_file=False)
+```
+
+**Parameters:**
+- `level` (Union[int, str]): The logging level (e.g., logging.DEBUG, logging.INFO, etc.)
+- `format_string` (Optional[str]): Custom format string for log messages
+- `log_file` (Optional[str]): Path to the log file (if log_to_file is True)
+- `log_to_console` (bool): Whether to log to the console
+- `log_to_file` (bool): Whether to log to a file
+
+**Example:**
+```python
+from fogis_api_client import configure_logging
+
+# Basic configuration with INFO level
+configure_logging(level="INFO")
+
+# Log to both console and file with DEBUG level
+configure_logging(
+    level="DEBUG",
+    log_to_console=True,
+    log_to_file=True,
+    log_file="fogis_api.log"
+)
+```
+
+### get_logger
+
+```python
+get_logger(name)
+```
+
+**Parameters:**
+- `name` (str): The name of the logger
+
+**Returns:**
+- `logging.Logger`: A logger instance
+
+**Example:**
+```python
+from fogis_api_client import get_logger
+
+logger = get_logger("my_module")
+logger.info("This is an info message")
+logger.debug("This is a debug message")
+```
+
+### set_log_level
+
+```python
+set_log_level(level)
+```
+
+**Parameters:**
+- `level` (Union[int, str]): The logging level (e.g., logging.DEBUG, logging.INFO, etc.)
+
+**Example:**
+```python
+from fogis_api_client import set_log_level
+import logging
+
+# Set log level to DEBUG
+set_log_level(logging.DEBUG)
+
+# Or using a string
+set_log_level("DEBUG")
+```
+
+### get_log_levels
+
+```python
+get_log_levels()
+```
+
+**Returns:**
+- `Dict[str, int]`: A dictionary mapping level names to their numeric values
+
+**Example:**
+```python
+from fogis_api_client import get_log_levels
+
+levels = get_log_levels()
+print(levels)
+# {'CRITICAL': 50, 'ERROR': 40, 'WARNING': 30, 'INFO': 20, 'DEBUG': 10, 'NOTSET': 0}
+```
+
+### add_sensitive_filter
+
+```python
+add_sensitive_filter()
+```
+
+Adds a filter to mask sensitive information in log messages.
+
+**Example:**
+```python
+from fogis_api_client import add_sensitive_filter, get_logger
+
+add_sensitive_filter()
+logger = get_logger("my_module")
+logger.info("Password: secret123")  # Will log "Password: ********"
+```
+
+### SensitiveFilter
+
+```python
+SensitiveFilter(patterns=None)
+```
+
+A logging filter that masks sensitive information in log messages.
+
+**Parameters:**
+- `patterns` (Optional[Dict[str, str]]): A dictionary mapping patterns to their masked values
+
+**Example:**
+```python
+from fogis_api_client import SensitiveFilter, get_logger
+import logging
+
+# Create a custom filter with additional patterns
+filter = SensitiveFilter({
+    "password": "********",
+    "api_key": "[MASKED_API_KEY]",
+    "secret": "[MASKED_SECRET]"
+})
+
+# Add the filter to a logger
+logger = get_logger("my_module")
+for handler in logger.handlers:
+    handler.addFilter(filter)
+
+logger.info("API Key: abc123")  # Will log "API Key: [MASKED_API_KEY]"
+```

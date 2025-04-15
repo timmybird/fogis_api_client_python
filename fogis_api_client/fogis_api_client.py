@@ -92,7 +92,7 @@ class FogisApiClient:
     """
 
     BASE_URL: str = "https://fogis.svenskfotboll.se/mdk"  # Define base URL as a class constant
-    logger: logging.Logger = logging.getLogger(__name__)
+    logger: logging.Logger = logging.getLogger("fogis_api_client.api")
 
     def __init__(
         self,
