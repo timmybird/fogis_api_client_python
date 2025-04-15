@@ -73,7 +73,7 @@ class MockFogisServer:
                     session["authenticated"] = True
                     session["username"] = username
 
-                    # Set cookies - use the same cookie names as the real API
+                    # Set cookies - use the same cookie names as defined in CookieDict
                     # The client expects FogisMobilDomarKlient_ASPXAUTH and ASP_NET_SessionId
                     resp = Response("Login successful")
                     resp.set_cookie("FogisMobilDomarKlient_ASPXAUTH", "mock_auth_cookie")
