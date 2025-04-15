@@ -73,11 +73,11 @@ class MockFogisServer:
                     session["authenticated"] = True
                     session["username"] = username
 
-                    # Set cookies - use the same cookie names as defined in CookieDict
-                    # The client expects FogisMobilDomarKlient_ASPXAUTH and ASP_NET_SessionId
+                    # Set cookies - use the same cookie names as expected by the client
+                    # The client checks for FogisMobilDomarKlient.ASPXAUTH (with a dot)
                     resp = Response("Login successful")
-                    resp.set_cookie("FogisMobilDomarKlient_ASPXAUTH", "mock_auth_cookie")
-                    resp.set_cookie("ASP_NET_SessionId", "mock_session_id")
+                    resp.set_cookie("FogisMobilDomarKlient.ASPXAUTH", "mock_auth_cookie")
+                    resp.set_cookie("ASP.NET_SessionId", "mock_session_id")
                     resp.headers["Location"] = "/mdk/"
                     resp.status_code = 302
                     return resp
@@ -317,11 +317,11 @@ class MockFogisServer:
     def _check_auth(self):
         """Check if the request is authenticated."""
         # Check if the user is authenticated via session or cookies
-        if session.get("authenticated") or request.cookies.get("FogisMobilDomarKlient_ASPXAUTH"):
+        if session.get("authenticated") or request.cookies.get("FogisMobilDomarKlient.ASPXAUTH"):
             return True
 
         # For testing purposes, we'll also accept cookie-based authentication
-        if "FogisMobilDomarKlient_ASPXAUTH" in request.cookies:
+        if "FogisMobilDomarKlient.ASPXAUTH" in request.cookies:
             return True
 
         # If we're here, the user is not authenticated
