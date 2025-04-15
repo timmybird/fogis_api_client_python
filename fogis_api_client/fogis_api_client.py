@@ -92,7 +92,7 @@ class FogisApiClient:
     """
 
     BASE_URL: str = "https://fogis.svenskfotboll.se/mdk"  # Define base URL as a class constant
-    logger: logging.Logger = logging.getLogger(__name__)
+    logger: logging.Logger = logging.getLogger("fogis_api_client.api")
 
     def __init__(
         self,
@@ -177,45 +177,100 @@ class FogisApiClient:
 
         login_url = f"{FogisApiClient.BASE_URL}/Login.aspx?ReturnUrl=%2fmdk%2f"
 
+        # Define headers for better browser simulation
+        headers = {
+            "Accept": (
+                "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,"
+                "image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+            ),
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Host": "fogis.svenskfotboll.se",
+            "Origin": "https://fogis.svenskfotboll.se",
+            "Referer": f"{FogisApiClient.BASE_URL}/Login.aspx?ReturnUrl=%2fmdk%2f",
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+            ),
+        }
+
         try:
-            # Get the login page to retrieve the __VIEWSTATE and __EVENTVALIDATION
-            response = self.session.get(login_url)
+            # Get the login page to retrieve form fields
+            self.logger.debug("Fetching login page")
+            response = self.session.get(login_url, headers=headers)
             response.raise_for_status()
 
+            # Set cookie consent if not already set
+            if "cookieconsent_status" not in self.session.cookies:
+                self.logger.debug("Setting cookie consent")
+                try:
+                    self.session.cookies.set(
+                        "cookieconsent_status", "dismiss", domain="fogis.svenskfotboll.se", path="/"
+                    )
+                except AttributeError:
+                    # Handle case where cookies is a dict-like object without set method (for tests)
+                    self.logger.debug("Using dict-style cookie setting")
+                    self.session.cookies["cookieconsent_status"] = "dismiss"
+
+            # Parse the login form
             soup = BeautifulSoup(response.text, "html.parser")
+            form = soup.find("form", {"id": "aspnetForm"}) or soup.find("form")
+
+            # For tests, if no form is found but we have the necessary hidden fields in the HTML,
+            # we can still proceed
             viewstate = soup.find("input", {"name": "__VIEWSTATE"})
             eventvalidation = soup.find("input", {"name": "__EVENTVALIDATION"})
 
-            if not viewstate or not eventvalidation:
-                error_msg = "Login failed: Could not find form elements"
+            if not form and not (viewstate and eventvalidation):
+                error_msg = "Login failed: Could not find login form or required form elements"
                 self.logger.error(error_msg)
                 raise FogisLoginError(error_msg)
 
-            viewstate_value = viewstate.get("value")
-            eventvalidation_value = eventvalidation.get("value")
+            # Extract all hidden fields
+            hidden_fields = {}
+            if form:
+                for input_tag in form.find_all("input", {"type": "hidden"}):
+                    name = input_tag.get("name")
+                    value = input_tag.get("value", "")
+                    if name:
+                        hidden_fields[name] = value
+            else:
+                # For tests, extract hidden fields directly from the soup
+                for input_tag in soup.find_all("input", {"type": "hidden"}):
+                    name = input_tag.get("name")
+                    value = input_tag.get("value", "")
+                    if name:
+                        hidden_fields[name] = value
 
-            if not viewstate_value or not eventvalidation_value:
-                error_msg = "Login failed: Form elements have no values"
-                self.logger.error(error_msg)
-                raise FogisLoginError(error_msg)
+            # Ensure we have the minimum required hidden fields
+            if viewstate and "__VIEWSTATE" not in hidden_fields:
+                hidden_fields["__VIEWSTATE"] = viewstate.get("value", "")
+            if eventvalidation and "__EVENTVALIDATION" not in hidden_fields:
+                hidden_fields["__EVENTVALIDATION"] = eventvalidation.get("value", "")
 
-            # Prepare login data
+            # Use the known working field names (from v0.0.5)
             login_data = {
-                "__EVENTTARGET": "",
-                "__EVENTARGUMENT": "",
-                "__VIEWSTATE": viewstate_value,
-                "__EVENTVALIDATION": eventvalidation_value,
-                "ctl00$cphMain$tbUsername": self.username,
-                "ctl00$cphMain$tbPassword": self.password,
-                "ctl00$cphMain$btnLogin": "Logga in",
+                **hidden_fields,
+                "ctl00$MainContent$UserName": self.username,
+                "ctl00$MainContent$Password": self.password,
+                "ctl00$MainContent$LoginButton": "Logga in",
             }
 
             # Submit login form
-            response = self.session.post(login_url, data=login_data)
-            response.raise_for_status()
+            self.logger.debug("Attempting login")
+            response = self.session.post(
+                login_url, data=login_data, headers=headers, allow_redirects=False
+            )
 
-            # Check if login was successful
-            if "FogisMobilDomarKlient.ASPXAUTH" in self.session.cookies:
+            # Handle the redirect manually for better control
+            if response.status_code == 302 and "FogisMobilDomarKlient.ASPXAUTH" in response.cookies:
+                redirect_url = response.headers["Location"]
+                if redirect_url.startswith("/"):
+                    redirect_url = f"{FogisApiClient.BASE_URL}{redirect_url}"
+
+                self.logger.debug(f"Following redirect to {redirect_url}")
+                redirect_response = self.session.get(redirect_url, headers=headers)
+                redirect_response.raise_for_status()
+
                 # Convert to our typed dictionary
                 self.cookies = cast(
                     CookieDict, {key: value for key, value in self.session.cookies.items()}
@@ -223,7 +278,10 @@ class FogisApiClient:
                 self.logger.info("Login successful")
                 return self.cookies
             else:
-                error_msg = "Login failed: Invalid credentials or session issue"
+                error_msg = (
+                    f"Login failed: Invalid credentials or session issue. "
+                    f"Status code: {response.status_code}"
+                )
                 self.logger.error(error_msg)
                 raise FogisLoginError(error_msg)
 

@@ -26,20 +26,49 @@ pip install -e .
 
 ### Setting Up Logging
 
-The FOGIS API Client uses Python's built-in logging module. It's recommended to configure logging to see what's happening:
+The FOGIS API Client provides enhanced logging utilities that make it easy to configure logging for your application:
 
 ```python
-import logging
+from fogis_api_client import configure_logging
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# Basic configuration with INFO level
+configure_logging(level="INFO")
 
 # For more detailed logs during development
-# logging.basicConfig(level=logging.DEBUG)
+configure_logging(
+    level="DEBUG",
+    format_string="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+
+# Log to both console and file
+configure_logging(
+    level="INFO",
+    log_to_console=True,
+    log_to_file=True,
+    log_file="fogis_api.log"
+)
 ```
+
+#### Advanced Logging Features
+
+The FOGIS API Client also provides additional logging utilities:
+
+```python
+from fogis_api_client import get_logger, set_log_level, add_sensitive_filter
+
+# Get a logger for a specific module
+logger = get_logger("my_module")
+logger.info("This is an info message")
+
+# Change log level dynamically
+set_log_level("DEBUG")
+
+# Add a filter to mask sensitive information in logs
+add_sensitive_filter()
+logger.info("Password: secret123")  # Will log "Password: ********"
+```
+
+The sensitive filter automatically masks passwords, authentication tokens, and session IDs to prevent them from appearing in log files.
 
 ## Authentication Methods
 

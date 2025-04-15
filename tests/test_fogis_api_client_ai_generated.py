@@ -19,7 +19,7 @@ class TestFogisApiClient(unittest.TestCase):
         # Set up logging capture
         self.log_capture = io.StringIO()
         self.log_handler = logging.StreamHandler(self.log_capture)
-        self.logger = logging.getLogger("fogis_api_client.fogis_api_client")
+        self.logger = logging.getLogger("fogis_api_client.api")
         self.logger.addHandler(self.log_handler)
         self.logger.setLevel(logging.INFO)
 
@@ -42,7 +42,14 @@ class TestFogisApiClient(unittest.TestCase):
 
         # Mock the post response
         mock_post_response = Mock()
+        mock_post_response.status_code = 302
+        mock_post_response.headers = {"Location": "/mdk/"}
+        mock_post_response.cookies = {"FogisMobilDomarKlient.ASPXAUTH": "mock_auth_cookie"}
         mock_post.return_value = mock_post_response
+
+        # Mock the redirect response
+        mock_redirect_response = Mock()
+        mock_get.side_effect = [mock_get_response, mock_redirect_response]
 
         # Mock the cookies
         self.api_client.session.cookies = {"FogisMobilDomarKlient.ASPXAUTH": "mock_auth_cookie"}
@@ -51,7 +58,9 @@ class TestFogisApiClient(unittest.TestCase):
         cookies = self.api_client.login()
 
         # Verify the result
-        self.assertEqual(cookies, {"FogisMobilDomarKlient.ASPXAUTH": "mock_auth_cookie"})
+        self.assertIn("FogisMobilDomarKlient.ASPXAUTH", cookies)
+        self.assertEqual(cookies["FogisMobilDomarKlient.ASPXAUTH"], "mock_auth_cookie")
+        # We don't check for cookieconsent_status since it's an implementation detail
 
     @patch("requests.Session.post")
     @patch("requests.Session.get")
