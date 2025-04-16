@@ -161,7 +161,11 @@ class TestFogisApiClientWithMockServer:
 
         # Check the structure of the first player
         home_player = players["hemmalag"][0]
-        assert "personid" in home_player
+        assert "matchdeltagareid" in home_player
+        assert "matchid" in home_player
+        assert "matchlagid" in home_player
+        assert "spelareid" in home_player
+        assert "trojnummer" in home_player
         assert "fornamn" in home_player
         assert "efternamn" in home_player
 

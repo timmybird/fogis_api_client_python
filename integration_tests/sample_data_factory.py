@@ -406,9 +406,17 @@ class MockDataFactory:
     def generate_match_players(
         match_id: Optional[int] = None,
     ) -> Dict[str, List[Dict[str, Any]]]:
-        """Generate sample match players."""
+        """Generate sample match players based on real FOGIS API data structure."""
         if match_id is None:
             match_id = MockDataFactory.generate_id()
+
+        # Generate home and away team IDs and names
+        home_team_id = MockDataFactory.generate_id()
+        away_team_id = MockDataFactory.generate_id()
+        home_team_name = MockDataFactory.generate_team_name()
+        away_team_name = MockDataFactory.generate_team_name()
+        home_team_club_id = MockDataFactory.generate_id()
+        away_team_club_id = MockDataFactory.generate_id()
 
         home_players = []
         away_players = []
@@ -416,29 +424,42 @@ class MockDataFactory:
         # Generate home team players
         for i in range(18):
             is_captain = i == 0
-            position_id = 1 if i == 0 else (2 if i < 5 else (3 if i < 10 else 4))
-            position = (
-                "Målvakt"
-                if position_id == 1
-                else (
-                    "Försvarare"
-                    if position_id == 2
-                    else ("Mittfältare" if position_id == 3 else "Anfallare")
-                )
-            )
+            is_substitute = i >= 11  # First 11 are starters, rest are substitutes
+            jersey_number = i + 1
 
+            # Generate a random Swedish personal number (YYYYMMDDXXXX)
+            birth_year = random.randint(1990, 2005)
+            birth_month = random.randint(1, 12)
+            birth_day = random.randint(1, 28)  # Simplified to avoid invalid dates
+            personal_number = f"{birth_year}{birth_month:02d}{birth_day:02d}{random.randint(1000, 9999)}"
+
+            # Create player with the full structure from real data
             player = {
-                "personid": MockDataFactory.generate_id(),
+                "__type": "Svenskfotboll.Fogis.Web.FogisMobilDomarKlient.MatchdeltagareJSON",
+                "matchdeltagareid": MockDataFactory.generate_id(),
+                "matchid": match_id,
+                "matchlagid": home_team_id,
+                "spelareid": MockDataFactory.generate_id(),
+                "trojnummer": jersey_number,
                 "fornamn": MockDataFactory.generate_name(True),
                 "efternamn": MockDataFactory.generate_name(False),
-                "smeknamn": None,
-                "tshirt": str(i + 1),
-                "position": position,
-                "positionid": position_id,
+                "personnr": personal_number,
+                "agerestriction": "",
+                "matchlagnamn": home_team_name,
+                "lagdelid": 0,
                 "lagkapten": is_captain,
-                "spelareid": MockDataFactory.generate_id(),
-                "licensnr": "".join(random.choices(string.ascii_uppercase, k=3))
-                + "".join(random.choices(string.digits, k=3)),
+                "ersattare": is_substitute,
+                "ejlicensieradibeslaktadforening": False,
+                "foreningid": home_team_club_id,
+                "positionsnummerhv": 0,
+                "byte1": 0,  # Will be filled in for substituted players
+                "byte2": 0,
+                "utvisning": "",
+                "arSpelandeLedare": False,
+                "ansvarig": False,
+                "spelarregistreringsstrang": "",
+                "spelareAntalAckumuleradeVarningar": random.randint(0, 2),
+                "spelareAvstangningBeskrivning": "",
             }
 
             home_players.append(player)
@@ -446,29 +467,42 @@ class MockDataFactory:
         # Generate away team players
         for i in range(18):
             is_captain = i == 0
-            position_id = 1 if i == 0 else (2 if i < 5 else (3 if i < 10 else 4))
-            position = (
-                "Målvakt"
-                if position_id == 1
-                else (
-                    "Försvarare"
-                    if position_id == 2
-                    else ("Mittfältare" if position_id == 3 else "Anfallare")
-                )
-            )
+            is_substitute = i >= 11  # First 11 are starters, rest are substitutes
+            jersey_number = i + 1
 
+            # Generate a random Swedish personal number (YYYYMMDDXXXX)
+            birth_year = random.randint(1990, 2005)
+            birth_month = random.randint(1, 12)
+            birth_day = random.randint(1, 28)  # Simplified to avoid invalid dates
+            personal_number = f"{birth_year}{birth_month:02d}{birth_day:02d}{random.randint(1000, 9999)}"
+
+            # Create player with the full structure from real data
             player = {
-                "personid": MockDataFactory.generate_id(),
+                "__type": "Svenskfotboll.Fogis.Web.FogisMobilDomarKlient.MatchdeltagareJSON",
+                "matchdeltagareid": MockDataFactory.generate_id(),
+                "matchid": match_id,
+                "matchlagid": away_team_id,
+                "spelareid": MockDataFactory.generate_id(),
+                "trojnummer": jersey_number,
                 "fornamn": MockDataFactory.generate_name(True),
                 "efternamn": MockDataFactory.generate_name(False),
-                "smeknamn": None,
-                "tshirt": str(i + 1),
-                "position": position,
-                "positionid": position_id,
+                "personnr": personal_number,
+                "agerestriction": "",
+                "matchlagnamn": away_team_name,
+                "lagdelid": 0,
                 "lagkapten": is_captain,
-                "spelareid": MockDataFactory.generate_id(),
-                "licensnr": "".join(random.choices(string.ascii_uppercase, k=3))
-                + "".join(random.choices(string.digits, k=3)),
+                "ersattare": is_substitute,
+                "ejlicensieradibeslaktadforening": False,
+                "foreningid": away_team_club_id,
+                "positionsnummerhv": 0,
+                "byte1": 0,  # Will be filled in for substituted players
+                "byte2": 0,
+                "utvisning": "",
+                "arSpelandeLedare": False,
+                "ansvarig": False,
+                "spelarregistreringsstrang": "",
+                "spelareAntalAckumuleradeVarningar": random.randint(0, 2),
+                "spelareAvstangningBeskrivning": "",
             }
 
             away_players.append(player)

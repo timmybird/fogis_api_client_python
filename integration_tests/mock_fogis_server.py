@@ -4,6 +4,7 @@ Mock FOGIS API Server for integration testing.
 This module provides a Flask-based mock server that simulates the FOGIS API endpoints
 for integration testing without requiring real credentials or internet access.
 """
+
 import json
 import logging
 from datetime import datetime
@@ -69,7 +70,9 @@ class MockFogisServer:
                     # Set cookies - use the same cookie names as expected by the client
                     # The client checks for FogisMobilDomarKlient.ASPXAUTH (with a dot)
                     resp = Response("Login successful")
-                    resp.set_cookie("FogisMobilDomarKlient.ASPXAUTH", "mock_auth_cookie")
+                    resp.set_cookie(
+                        "FogisMobilDomarKlient.ASPXAUTH", "mock_auth_cookie"
+                    )
                     resp.set_cookie("ASP.NET_SessionId", "mock_session_id")
                     resp.headers["Location"] = "/mdk/"
                     resp.status_code = 302
@@ -157,10 +160,13 @@ class MockFogisServer:
             # Generate players data using the factory
             players_data = MockDataFactory.generate_match_players(match_id)
 
+            # For match players, we need to keep the JSON structure
             return jsonify({"d": json.dumps(players_data)})
 
         # Match officials endpoint
-        @self.app.route("/mdk/MatchWebMetoder.aspx/HamtaMatchFunktionarer", methods=["POST"])
+        @self.app.route(
+            "/mdk/MatchWebMetoder.aspx/HamtaMatchFunktionarer", methods=["POST"]
+        )
         def fetch_match_officials():
             auth_result = self._check_auth()
             if auth_result is not True:
@@ -176,7 +182,9 @@ class MockFogisServer:
             return jsonify({"d": json.dumps(officials_data)})
 
         # Match events endpoint
-        @self.app.route("/mdk/MatchWebMetoder.aspx/HamtaMatchHandelser", methods=["POST"])
+        @self.app.route(
+            "/mdk/MatchWebMetoder.aspx/HamtaMatchHandelser", methods=["POST"]
+        )
         def fetch_match_events():
             auth_result = self._check_auth()
             if auth_result is not True:
@@ -194,7 +202,9 @@ class MockFogisServer:
             return jsonify({"d": events_data})
 
         # Match result endpoint
-        @self.app.route("/mdk/MatchWebMetoder.aspx/GetMatchresultatlista", methods=["POST"])
+        @self.app.route(
+            "/mdk/MatchWebMetoder.aspx/GetMatchresultatlista", methods=["POST"]
+        )
         def fetch_match_result():
             auth_result = self._check_auth()
             if auth_result is not True:
@@ -210,7 +220,9 @@ class MockFogisServer:
             return jsonify({"d": json.dumps(result_data)})
 
         # Report match event endpoint
-        @self.app.route("/mdk/MatchWebMetoder.aspx/SparaMatchhandelse", methods=["POST"])
+        @self.app.route(
+            "/mdk/MatchWebMetoder.aspx/SparaMatchhandelse", methods=["POST"]
+        )
         def report_match_event():
             auth_result = self._check_auth()
             if auth_result is not True:
@@ -223,10 +235,14 @@ class MockFogisServer:
             self.reported_events.append(event_data)
 
             # Return success response
-            return jsonify({"d": json.dumps({"success": True, "id": len(self.reported_events)})})
+            return jsonify(
+                {"d": json.dumps({"success": True, "id": len(self.reported_events)})}
+            )
 
         # Clear match events endpoint
-        @self.app.route("/mdk/MatchWebMetoder.aspx/RensaMatchhandelser", methods=["POST"])
+        @self.app.route(
+            "/mdk/MatchWebMetoder.aspx/RensaMatchhandelser", methods=["POST"]
+        )
         @self.app.route("/mdk/Fogis/Match/ClearMatchEvents", methods=["POST"])
         def clear_match_events():
             auth_result = self._check_auth()
@@ -243,7 +259,9 @@ class MockFogisServer:
             return jsonify({"d": json.dumps({"success": True})})
 
         # Mark reporting finished endpoint
-        @self.app.route("/mdk/Fogis/Match/SparaMatchGodkannDomarrapport", methods=["POST"])
+        @self.app.route(
+            "/mdk/Fogis/Match/SparaMatchGodkannDomarrapport", methods=["POST"]
+        )
         def mark_reporting_finished():
             auth_result = self._check_auth()
             if auth_result is not True:
@@ -284,7 +302,9 @@ class MockFogisServer:
     def _check_auth(self):
         """Check if the request is authenticated."""
         # Check if the user is authenticated via session or cookies
-        if session.get("authenticated") or request.cookies.get("FogisMobilDomarKlient.ASPXAUTH"):
+        if session.get("authenticated") or request.cookies.get(
+            "FogisMobilDomarKlient.ASPXAUTH"
+        ):
             return True
 
         # For testing purposes, we'll also accept cookie-based authentication
