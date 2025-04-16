@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.0] - 2025-04-16
+
+### Added
+- Mock FOGIS API server for integration tests (Issue #91)
+  - Flask-based mock server that simulates all FOGIS API endpoints
+  - Data factory that generates realistic sample data
+  - Integration tests that use the mock server
+  - Documentation for third-party integration testing
+- Expanded guidelines in CONTRIBUTING.md for using markdown files with GitHub CLI
+  - Added examples for PR descriptions, issue templates, and comments
+  - Improved guidelines for AI agents contributing to the project
+
+### Fixed
+- Fixed login functionality to work with updated FOGIS login form
+  - Updated authentication process to handle form changes
+  - Improved error handling for login failures
+
 ## [0.1.0] - 2025-04-11
 
 ### Added
