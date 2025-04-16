@@ -516,37 +516,89 @@ class MockDataFactory:
     def generate_match_officials(
         match_id: Optional[int] = None,
     ) -> Dict[str, List[Dict[str, Any]]]:
-        """Generate sample match officials."""
+        """Generate sample match officials based on real FOGIS API data structure."""
         if match_id is None:
             match_id = MockDataFactory.generate_id()
+
+        # Generate home and away team IDs and names
+        home_team_id = MockDataFactory.generate_id()
+        away_team_id = MockDataFactory.generate_id()
+        home_team_name = MockDataFactory.generate_team_name()
+        away_team_name = MockDataFactory.generate_team_name()
+        home_team_club_id = MockDataFactory.generate_id()
+        away_team_club_id = MockDataFactory.generate_id()
 
         home_officials = []
         away_officials = []
 
         # Generate home team officials
-        for _, (role_id, role) in enumerate(
+        for i, (role_id, role) in enumerate(
             [(1, "Tränare"), (2, "Assisterande tränare"), (3, "Lagledare")]
         ):
+            # Generate a random Swedish personal number (YYYYMMDDXXXX)
+            birth_year = random.randint(1960, 1990)  # Staff are typically older
+            birth_month = random.randint(1, 12)
+            birth_day = random.randint(1, 28)  # Simplified to avoid invalid dates
+            personal_number = f"{birth_year}{birth_month:02d}{birth_day:02d}{random.randint(1000, 9999)}"
+
+            # Create official with the full structure from real data
             official = {
+                "__type": "Svenskfotboll.Fogis.Web.FogisMobilDomarKlient.MatchlagledareJSON",
+                "matchlagledareid": MockDataFactory.generate_id(),
+                "matchid": match_id,
+                "matchlagid": home_team_id,
                 "personid": MockDataFactory.generate_id(),
                 "fornamn": MockDataFactory.generate_name(True),
                 "efternamn": MockDataFactory.generate_name(False),
-                "roll": role,
-                "rollid": role_id,
+                "personnr": personal_number,
+                "matchlagnamn": home_team_name,
+                "lagrollid": role_id,
+                "lagrollnamn": role,
+                "avvisadmatchminut": 0,
+                "avvisadlindrig": False,
+                "avvisadgrov": False,
+                "varnad": False,
+                "varnadmatchminut": 0,
+                "ansvarig": i == 0,  # First official is responsible
+                "foreningid": home_team_club_id,
+                "ledareAntalAckumuleradeVarningar": 0,
+                "ledareAvstangningBeskrivning": "",
             }
 
             home_officials.append(official)
 
         # Generate away team officials
-        for _, (role_id, role) in enumerate(
+        for i, (role_id, role) in enumerate(
             [(1, "Tränare"), (2, "Assisterande tränare"), (3, "Lagledare")]
         ):
+            # Generate a random Swedish personal number (YYYYMMDDXXXX)
+            birth_year = random.randint(1960, 1990)  # Staff are typically older
+            birth_month = random.randint(1, 12)
+            birth_day = random.randint(1, 28)  # Simplified to avoid invalid dates
+            personal_number = f"{birth_year}{birth_month:02d}{birth_day:02d}{random.randint(1000, 9999)}"
+
+            # Create official with the full structure from real data
             official = {
+                "__type": "Svenskfotboll.Fogis.Web.FogisMobilDomarKlient.MatchlagledareJSON",
+                "matchlagledareid": MockDataFactory.generate_id(),
+                "matchid": match_id,
+                "matchlagid": away_team_id,
                 "personid": MockDataFactory.generate_id(),
                 "fornamn": MockDataFactory.generate_name(True),
                 "efternamn": MockDataFactory.generate_name(False),
-                "roll": role,
-                "rollid": role_id,
+                "personnr": personal_number,
+                "matchlagnamn": away_team_name,
+                "lagrollid": role_id,
+                "lagrollnamn": role,
+                "avvisadmatchminut": 0,
+                "avvisadlindrig": False,
+                "avvisadgrov": False,
+                "varnad": False,
+                "varnadmatchminut": 0,
+                "ansvarig": i == 0,  # First official is responsible
+                "foreningid": away_team_club_id,
+                "ledareAntalAckumuleradeVarningar": 0,
+                "ledareAvstangningBeskrivning": "",
             }
 
             away_officials.append(official)
@@ -712,8 +764,8 @@ class MockDataFactory:
         return events
 
     @staticmethod
-    def generate_match_result(match_id: Optional[int] = None) -> Dict[str, Any]:
-        """Generate sample match result."""
+    def generate_match_result(match_id: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Generate sample match result based on real FOGIS API data structure."""
         if match_id is None:
             match_id = MockDataFactory.generate_id()
 
@@ -722,15 +774,35 @@ class MockDataFactory:
         halftime_home = min(home_goals, random.randint(0, 3))
         halftime_away = min(away_goals, random.randint(0, 3))
 
-        result = {
+        # Create full-time result
+        full_time_result = {
+            "__type": "Svenskfotboll.Fogis.Web.FogisMobilDomarKlient.MatchresultatJSON",
+            "matchresultatid": MockDataFactory.generate_id(),
             "matchid": match_id,
-            "hemmamal": home_goals,
-            "bortamal": away_goals,
-            "halvtidHemmamal": halftime_home,
-            "halvtidBortamal": halftime_away,
+            "matchresultattypid": 1,
+            "matchresultattypnamn": "Slutresultat",
+            "wo": False,
+            "ow": False,
+            "ww": False,
+            "matchlag1mal": home_goals,
+            "matchlag2mal": away_goals,
         }
 
-        return result
+        # Create half-time result
+        half_time_result = {
+            "__type": "Svenskfotboll.Fogis.Web.FogisMobilDomarKlient.MatchresultatJSON",
+            "matchresultatid": MockDataFactory.generate_id(),
+            "matchid": match_id,
+            "matchresultattypid": 2,
+            "matchresultattypnamn": "Resultat efter period 1",
+            "wo": False,
+            "ow": False,
+            "ww": False,
+            "matchlag1mal": halftime_home,
+            "matchlag2mal": halftime_away,
+        }
+
+        return [full_time_result, half_time_result]
 
     @staticmethod
     def get_sample_match_list_response() -> str:
@@ -766,7 +838,7 @@ class MockDataFactory:
     def get_sample_match_result_response() -> str:
         """Get a sample match result response as a JSON string."""
         match_result = MockDataFactory.generate_match_result()
-        return json.dumps({"d": json.dumps(match_result)})
+        return json.dumps({"d": match_result})
 
 
 # Sample data for the mock server

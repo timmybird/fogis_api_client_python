@@ -179,6 +179,7 @@ class MockFogisServer:
             # Generate officials data using the factory
             officials_data = MockDataFactory.generate_match_officials(match_id)
 
+            # For match officials, we need to keep the JSON structure
             return jsonify({"d": json.dumps(officials_data)})
 
         # Match events endpoint
@@ -217,7 +218,9 @@ class MockFogisServer:
             # Generate result data using the factory
             result_data = MockDataFactory.generate_match_result(match_id)
 
-            return jsonify({"d": json.dumps(result_data)})
+            # For match results, the response format is different - it's a direct array in the "d" field
+            # rather than a JSON string
+            return jsonify({"d": result_data})
 
         # Report match event endpoint
         @self.app.route(
@@ -270,7 +273,8 @@ class MockFogisServer:
             # Get match ID from request (not used in mock implementation)
             # In a real implementation, we would use match_id to mark specific match as reported
 
-            # Return success response
+            # Return success response with a dictionary containing success=true
+            # This matches what the client expects
             return jsonify({"d": json.dumps({"success": True})})
 
         # Main dashboard route after login
