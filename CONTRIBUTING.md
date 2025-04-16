@@ -294,11 +294,14 @@ If you are an AI assistant reading this:
    - Add regression tests for modified functionality
    - Verify that API endpoints still work as expected
 
-4. **Creating Well-Formatted PRs**:
-   - Use markdown files for complex PR descriptions instead of inline text
-   - Create a markdown file with proper formatting, headings, lists, and code blocks
-   - Use the GitHub CLI with the `--body-file` option to create or update PRs
-   - Example workflow:
+4. **Using Markdown Files with GitHub CLI**:
+   - Use markdown files for any complex GitHub content instead of inline text
+   - This applies to PR descriptions, issue templates, comments, and more
+   - Create markdown files with proper formatting, headings, lists, and code blocks
+   - Use the GitHub CLI with the appropriate file option for different commands
+   - Example workflows:
+
+     **For PR descriptions:**
      ```bash
      # Create a markdown file with your PR description
      cat > pr_description.md << 'EOL'
@@ -322,9 +325,69 @@ If you are an AI assistant reading this:
 
      # Create the PR using the file
      gh pr create --base develop --head your-branch --title "Add feature X" --body-file pr_description.md
+
+     # Or update an existing PR
+     gh pr edit 123 --body-file pr_description.md
      ```
-   - This approach produces cleaner, better-formatted PRs than using inline text
-   - It also allows you to version control your PR descriptions
+
+     **For issue descriptions:**
+     ```bash
+     # Create a markdown file with your issue description
+     cat > issue_description.md << 'EOL'
+     ## Description
+     Detailed description of the issue...
+
+     ## Steps to Reproduce
+     1. Step one
+     2. Step two
+     3. Step three
+
+     ## Expected Behavior
+     What should happen...
+
+     ## Actual Behavior
+     What actually happens...
+     EOL
+
+     # Create the issue using the file
+     gh issue create --title "Bug: Something is broken" --body-file issue_description.md
+     ```
+
+     **For comments:**
+     ```bash
+     # Create a markdown file with your comment
+     cat > comment.md << 'EOL'
+     I've reviewed this PR and have the following feedback:
+
+     ## Code Quality
+     - The function on line 42 could be simplified
+     - Good test coverage overall
+
+     ## Suggestions
+     ```python
+     # Instead of this:
+     def complex_function(x, y):
+         return x * 2 + y * 3
+
+     # Consider this:
+     def complex_function(x, y):
+         return 2*x + 3*y
+     ```
+     EOL
+
+     # Add a comment to a PR
+     gh pr comment 123 --body-file comment.md
+
+     # Or add a comment to an issue
+     gh issue comment 456 --body-file comment.md
+     ```
+
+   - Benefits of this approach:
+     - Produces cleaner, better-formatted content
+     - Allows you to version control your content
+     - Makes it easier to reuse templates
+     - Simplifies editing and reviewing before submission
+     - Works better with AI-generated content
 
 5. **Proper Issue Management**:
    - Create well-structured issues with clear descriptions
@@ -369,13 +432,15 @@ If you are an AI assistant reading this:
 
 7. **Guidelines for AI Agents**:
    - Follow all the same guidelines as human contributors
-   - Use the markdown file approach for PR descriptions (as described in section 4)
+   - Always use the markdown file approach for complex GitHub content (as described in section 4)
+   - This is especially important for AI-generated content, which can be lengthy and complex
    - Generate well-structured, properly formatted code that follows the project's style guidelines
    - Provide detailed explanations of your changes in PR descriptions
    - Break down complex tasks into smaller, manageable PRs
    - Always run tests locally before submitting PRs
    - Be explicit about any limitations or potential issues in your implementation
    - When in doubt, ask for clarification rather than making assumptions
+   - Consider creating templates for common tasks to ensure consistency
 
 8. **Remind Users of the Process**:
    - If a user asks you to push directly to main, remind them of the GitFlow process
