@@ -294,7 +294,39 @@ If you are an AI assistant reading this:
    - Add regression tests for modified functionality
    - Verify that API endpoints still work as expected
 
-4. **Proper Issue Management**:
+4. **Creating Well-Formatted PRs**:
+   - Use markdown files for complex PR descriptions instead of inline text
+   - Create a markdown file with proper formatting, headings, lists, and code blocks
+   - Use the GitHub CLI with the `--body-file` option to create or update PRs
+   - Example workflow:
+     ```bash
+     # Create a markdown file with your PR description
+     cat > pr_description.md << 'EOL'
+     # PR Title
+
+     ## Description
+     This PR adds feature X which does Y.
+
+     ## Changes
+     - Added new class for X
+     - Updated tests
+     - Documentation updates
+
+     ## Related Issue
+     Fixes #123
+
+     ## Type of Change
+     - [x] New feature
+     - [ ] Bug fix
+     EOL
+
+     # Create the PR using the file
+     gh pr create --base develop --head your-branch --title "Add feature X" --body-file pr_description.md
+     ```
+   - This approach produces cleaner, better-formatted PRs than using inline text
+   - It also allows you to version control your PR descriptions
+
+5. **Proper Issue Management**:
    - Create well-structured issues with clear descriptions
    - Add appropriate labels to issues (bug, enhancement, documentation, etc.)
    - Close issues when the corresponding PR is merged
@@ -306,7 +338,7 @@ If you are an AI assistant reading this:
    - Mention blockers or dependencies in comments
    - For "won't fix" decisions, explain the rationale
 
-5. **Branch Cleanup**:
+6. **Branch Cleanup**:
    - Always delete branches after merging
    - Remind users to delete branches after PRs are merged
    - Don't leave stale branches in the repository
@@ -323,8 +355,29 @@ If you are an AI assistant reading this:
    - Respond to review comments promptly
    - Update PRs based on feedback
    - Rebase or merge with the target branch if conflicts arise
+   - For complex PR descriptions, use a markdown file with the GitHub CLI:
+     ```bash
+     # Create a markdown file with your PR description
+     echo "# PR Title\n\n## Description\nDetailed description here..." > pr_description.md
 
-7. **Remind Users of the Process**:
+     # Create a PR using the file
+     gh pr create --base develop --head your-branch --title "Your PR Title" --body-file pr_description.md
+
+     # Or update an existing PR
+     gh pr edit 123 --body-file pr_description.md
+     ```
+
+7. **Guidelines for AI Agents**:
+   - Follow all the same guidelines as human contributors
+   - Use the markdown file approach for PR descriptions (as described in section 4)
+   - Generate well-structured, properly formatted code that follows the project's style guidelines
+   - Provide detailed explanations of your changes in PR descriptions
+   - Break down complex tasks into smaller, manageable PRs
+   - Always run tests locally before submitting PRs
+   - Be explicit about any limitations or potential issues in your implementation
+   - When in doubt, ask for clarification rather than making assumptions
+
+8. **Remind Users of the Process**:
    - If a user asks you to push directly to main, remind them of the GitFlow process
    - Suggest creating a proper branch and PR instead
    - Reference this document when explaining the process
