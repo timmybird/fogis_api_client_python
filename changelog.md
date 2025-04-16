@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2] - 2025-04-16
+
+### Fixed
+- Fixed all API endpoint URLs to use the correct paths
+- Added comprehensive API endpoint documentation to prevent future issues
+- Fixed fetch_matches_list_json method to use the correct endpoint and payload structure
+
 ## [0.2.1] - 2025-04-16
 
 ### Fixed
