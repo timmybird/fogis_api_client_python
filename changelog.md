@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.1] - 2025-04-16
+
+### Fixed
+- Fixed login redirect URL handling to correctly process redirects after authentication
+- Resolved 404 error caused by duplicate path segments in redirect URL
+
 ## [0.2.0] - 2025-04-16
 
 ### Added
