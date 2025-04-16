@@ -9,7 +9,7 @@ import json
 import random
 import string
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 
 class MockDataFactory:
@@ -141,7 +141,9 @@ class MockDataFactory:
         return f"{hours:02d}:{minutes:02d}"
 
     @staticmethod
-    def generate_timestamp(future: bool = True, days_offset: Optional[int] = None) -> int:
+    def generate_timestamp(
+        future: bool = True, days_offset: Optional[int] = None
+    ) -> int:
         """Generate a random timestamp in milliseconds."""
         if days_offset is None:
             days_offset = random.randint(1, 180) if future else -random.randint(1, 180)
@@ -150,7 +152,9 @@ class MockDataFactory:
         return int(date.timestamp() * 1000)
 
     @staticmethod
-    def generate_formatted_timestamp(future: bool = True, days_offset: Optional[int] = None) -> str:
+    def generate_formatted_timestamp(
+        future: bool = True, days_offset: Optional[int] = None
+    ) -> str:
         """Generate a random timestamp in FOGIS format."""
         timestamp = MockDataFactory.generate_timestamp(future, days_offset)
         return f"\\/Date({timestamp})\\/"
@@ -260,7 +264,8 @@ class MockDataFactory:
                 "lag2spelsystem": "4-3-3",
                 "anlaggningid": MockDataFactory.generate_id(),
                 "anlaggningnamn": (
-                    f"{random.choice(['Arena', 'Stadium', 'Park'])} " f"{random.randint(1, 5)}"
+                    f"{random.choice(['Arena', 'Stadium', 'Park'])} "
+                    f"{random.randint(1, 5)}"
                 ),
                 "anlaggningLatitud": round(57.0 + random.random(), 6),
                 "anlaggningLongitud": round(12.0 + random.random(), 6),
@@ -521,72 +526,152 @@ class MockDataFactory:
     def generate_match_events(
         match_id: Optional[int] = None, count: int = 5
     ) -> List[Dict[str, Any]]:
-        """Generate sample match events."""
+        """Generate sample match events based on real FOGIS API data structure."""
         if match_id is None:
             match_id = MockDataFactory.generate_id()
 
-        events = []
+        events: List[Dict[str, Any]] = []
         home_score = 0
         away_score = 0
 
-        for _ in range(count):
-            # Determine event type
-            event_types = [
-                (6, "Mål"),  # Goal
-                (1, "Gult kort"),  # Yellow card
-                (2, "Rött kort"),  # Red card
-                (7, "Byte"),  # Substitution
-            ]
-            event_code, event_type = random.choice(event_types)
+        # Generate home and away team IDs and names
+        home_team_id = MockDataFactory.generate_id()
+        away_team_id = MockDataFactory.generate_id()
+        home_team_name = MockDataFactory.generate_team_name()
+        away_team_name = MockDataFactory.generate_team_name()
 
-            # Determine team (home or away)
-            is_home_team = random.choice([True, False])
-            team_id = MockDataFactory.generate_id()
-            team_name = f"{'Home' if is_home_team else 'Away'} Team"
+        # Track related events (for substitutions)
+        related_events: Dict[Union[int, str], Any] = {}
+        # We'll store lists of event IDs under integer keys and sets under the "used" key
 
-            # Determine minute
-            minute = random.randint(1, 90)
+        # Generate a realistic sequence of events
+        # We'll create a timeline of events that makes sense for a football match
+        timeline = sorted(random.sample(range(1, 90), min(count, 20)))
+
+        # Define event types based on real data
+        event_types = [
+            # (id, name, affects_score, requires_related_event)
+            (6, "Spelmål", True, False),  # Regular goal
+            (14, "Straffmål", True, False),  # Penalty goal
+            (29, "Frisparksmål (Direkt i mål)", True, False),  # Free kick goal
+            (20, "Varning", False, False),  # Yellow card
+            (21, "Utvisning", False, False),  # Red card
+            (16, "Byte ut", False, False),  # Substitution out
+            (17, "Byte in", False, True),  # Substitution in (related to "Byte ut")
+            (23, "Match slut", False, False),  # End of match
+        ]
+
+        # Add a match end event at 90 minutes
+        if count > 1:
+            timeline.append(90)
+
+        # Generate events along the timeline
+        for i, minute in enumerate(timeline):
+            # For the last minute, always add a "Match slut" event
+            if minute == 90 and i == len(timeline) - 1:
+                event_type_id, event_type_name, affects_score, requires_related = (
+                    23,
+                    "Match slut",
+                    False,
+                    False,
+                )
+                team_id, team_name = 0, ""
+                player_id, player_name = 0, " "
+                jersey_number = -1
+                participant_id = 0
+            else:
+                # Select a random event type (weighted towards more common events)
+                weights = [10, 5, 2, 8, 3, 8, 8, 0]  # Higher weight = more likely
+                event_type_index = random.choices(
+                    range(len(event_types)), weights=weights, k=1
+                )[0]
+                event_type_id, event_type_name, affects_score, requires_related = (
+                    event_types[event_type_index]
+                )
+
+                # For substitution in, we need a related "Byte ut" event
+                if requires_related and event_type_id == 17:  # Byte in
+                    # Skip if we don't have any "Byte ut" events to relate to
+                    if 16 not in related_events:
+                        continue
+
+                    # Get the most recent "Byte ut" event that doesn't have a related "Byte in" yet
+                    related_event_id = 0
+                    for out_event_id in related_events.get(16, []):
+                        if out_event_id not in related_events.get("used", set()):
+                            related_event_id = out_event_id
+                            # Mark this "Byte ut" as used
+                            if "used" not in related_events:
+                                related_events["used"] = set()
+                            related_events["used"].add(out_event_id)
+                            break
+                    else:
+                        # No unused "Byte ut" events found, skip this event
+                        continue
+
+                    # Use the same team as the related "Byte ut" event
+                    for event in events:
+                        if event["matchhandelseid"] == related_event_id:
+                            team_id = event["matchlagid"]
+                            team_name = event["matchlagnamn"]
+                            break
+                else:
+                    # Determine team (home or away)
+                    is_home_team = random.choice([True, False])
+                    team_id = home_team_id if is_home_team else away_team_id
+                    team_name = home_team_name if is_home_team else away_team_name
+                    related_event_id = 0
+
+                # Generate player details
+                player_id = MockDataFactory.generate_id()
+                player_name = MockDataFactory.generate_full_name()
+                jersey_number = random.randint(1, 25)
+                participant_id = MockDataFactory.generate_id()
+
+            # Determine period based on minute
             period = 1 if minute <= 45 else 2
 
-            # Create player names
-            player_name = f"Player {random.randint(1, 20)}"
-            assisting_player = (
-                f"Player {random.randint(1, 20)}" if event_code == 6 or event_code == 7 else None
-            )
-
-            # Update score for goals
-            if event_code == 6:
+            # Update score for goal events
+            if affects_score:
+                is_home_team = team_id == home_team_id
                 if is_home_team:
                     home_score += 1
                 else:
                     away_score += 1
 
-            # Create the event
+            # Create the event with the full structure from real data
             event = {
+                "__type": "Svenskfotboll.Fogis.Web.FogisMobilDomarKlient.MatchhandelseJSON",
                 "matchhandelseid": MockDataFactory.generate_id(),
                 "matchid": match_id,
-                "handelsekod": event_code,
-                "handelsetyp": event_type,
-                "minut": minute,
-                "lagid": team_id,
-                "lag": team_name,
-                "personid": MockDataFactory.generate_id(),
-                "spelare": player_name,
+                "matchdeltagareid": participant_id,
+                "matchhandelsetypid": event_type_id,
+                "matchhandelsetypnamn": event_type_name,
+                "matchlagid": team_id,
+                "matchlagnamn": team_name,
+                "trojnummer": jersey_number,
+                "spelareid": player_id,
+                "spelarenamn": player_name,
+                "matchminut": minute,
+                "kommentar": "",
+                "hemmamal": home_score if affects_score else 0,
+                "bortamal": away_score if affects_score else 0,
                 "period": period,
+                "matchhandelsetypmedforstallningsandring": affects_score,
+                "matchhandelsetypanvanderannonseradtid": False,
+                "tidsangivelse": str(minute),
+                "planpositionx": -1,
+                "planpositiony": -1,
+                "relateradTillMatchhandelseID": (
+                    related_event_id if requires_related else 0
+                ),
             }
 
-            # Add goal-specific fields
-            if event_code == 6:
-                event["mal"] = True
-                event["resultatHemma"] = home_score
-                event["resultatBorta"] = away_score
-                event["assisterande"] = assisting_player
-                event["assisterandeid"] = MockDataFactory.generate_id()
-
-            # Add substitution-specific fields
-            if event_code == 7:
-                event["assisterande"] = assisting_player
-                event["assisterandeid"] = MockDataFactory.generate_id()
+            # Store event ID for potential related events
+            if event_type_id == 16:  # Byte ut
+                if 16 not in related_events:
+                    related_events[16] = []
+                related_events[16].append(event["matchhandelseid"])
 
             events.append(event)
 
@@ -641,7 +726,7 @@ class MockDataFactory:
     def get_sample_match_events_response() -> str:
         """Get a sample match events response as a JSON string."""
         match_events = MockDataFactory.generate_match_events()
-        return json.dumps({"d": json.dumps(match_events)})
+        return json.dumps({"d": match_events})
 
     @staticmethod
     def get_sample_match_result_response() -> str:

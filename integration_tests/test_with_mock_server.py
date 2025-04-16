@@ -223,10 +223,10 @@ class TestFogisApiClientWithMockServer:
         event = events[0]
         assert "matchhandelseid" in event
         assert "matchid" in event
-        assert "handelsekod" in event
-        assert "handelsetyp" in event
-        assert "minut" in event
-        assert "lagid" in event
+        assert "matchhandelsetypid" in event  # New field name instead of handelsekod
+        assert "matchhandelsetypnamn" in event  # New field name instead of handelsetyp
+        assert "matchminut" in event  # New field name instead of minut
+        assert "matchlagid" in event  # New field name instead of lagid
 
     def test_fetch_match_result(
         self, mock_fogis_server: Dict[str, str], test_credentials: Dict[str, str]

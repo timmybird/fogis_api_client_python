@@ -189,7 +189,9 @@ class MockFogisServer:
             # Generate events data using the factory
             events_data = MockDataFactory.generate_match_events(match_id)
 
-            return jsonify({"d": json.dumps(events_data)})
+            # For match events, the response format is different
+            # It's a direct array in the "d" field rather than a JSON string
+            return jsonify({"d": events_data})
 
         # Match result endpoint
         @self.app.route("/mdk/MatchWebMetoder.aspx/GetMatchresultatlista", methods=["POST"])
