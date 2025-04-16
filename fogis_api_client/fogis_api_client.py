@@ -264,8 +264,16 @@ class FogisApiClient:
             # Handle the redirect manually for better control
             if response.status_code == 302 and "FogisMobilDomarKlient.ASPXAUTH" in response.cookies:
                 redirect_url = response.headers["Location"]
+
+                # Fix the redirect URL - the issue is here
                 if redirect_url.startswith("/"):
-                    redirect_url = f"{FogisApiClient.BASE_URL}{redirect_url}"
+                    # If it starts with /mdk/mdk/, we need to fix it
+                    if redirect_url.startswith("/mdk/mdk/"):
+                        redirect_url = redirect_url.replace("/mdk/mdk/", "/mdk/")
+
+                    # Now construct the full URL
+                    base = "https://fogis.svenskfotboll.se"
+                    redirect_url = f"{base}{redirect_url}"
 
                 self.logger.debug(f"Following redirect to {redirect_url}")
                 redirect_response = self.session.get(redirect_url, headers=headers)
