@@ -75,9 +75,16 @@ class TestFogisApiClient(unittest.TestCase):
         )
         mocked_session.get.return_value = mock_get_response
 
-        # Mock the post response to simulate successful login
+        # Mock the post response for successful login (302 redirect)
         mock_post_response = Mock()
+        mock_post_response.status_code = 302
+        mock_post_response.headers = {"Location": "/mdk/"}
+        mock_post_response.cookies = {"FogisMobilDomarKlient.ASPXAUTH": "mock_auth_cookie"}
         mocked_session.post.return_value = mock_post_response
+
+        # Mock the redirect response
+        mock_redirect_response = Mock()
+        mocked_session.get.side_effect = [mock_get_response, mock_redirect_response]
 
         # Mock the cookies to simulate successful login
         mocked_session.cookies = {"FogisMobilDomarKlient.ASPXAUTH": "mock_auth_cookie"}
@@ -86,8 +93,9 @@ class TestFogisApiClient(unittest.TestCase):
         cookies = client.login()
 
         # Verify the result
-        self.assertEqual(cookies, {"FogisMobilDomarKlient.ASPXAUTH": "mock_auth_cookie"})
-        mocked_session.get.assert_called_once()
+        self.assertIn("FogisMobilDomarKlient.ASPXAUTH", cookies)
+        self.assertEqual(cookies["FogisMobilDomarKlient.ASPXAUTH"], "mock_auth_cookie")
+        self.assertEqual(mocked_session.get.call_count, 2)  # Initial page load + redirect
         mocked_session.post.assert_called_once()
 
     def test_login_failure_invalid_credentials(self):
@@ -107,9 +115,14 @@ class TestFogisApiClient(unittest.TestCase):
         )
         mocked_session.get.return_value = mock_get_response
 
-        # Mock the post response to simulate failed login
+        # Mock the post response to simulate failed login for both field name attempts
         mock_post_response = Mock()
+        mock_post_response.status_code = 200  # Not a redirect
+        # Make both post calls return the same failed response
         mocked_session.post.return_value = mock_post_response
+
+        # Make post only return one response to simplify the test
+        mocked_session.post = Mock(return_value=mock_post_response)
 
         # Mock the cookies to simulate failed login (no auth cookie)
         mocked_session.cookies = {}
@@ -119,6 +132,7 @@ class TestFogisApiClient(unittest.TestCase):
             client.login()
 
         mocked_session.get.assert_called_once()
+        # Verify that the post method was called once
         mocked_session.post.assert_called_once()
 
     def test_api_request_success(self):
