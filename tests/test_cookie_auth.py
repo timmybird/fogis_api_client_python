@@ -59,6 +59,9 @@ class TestCookieAuth(unittest.TestCase):
 
         mock_post_response = MagicMock()
         mock_post_response.raise_for_status = lambda: None
+        mock_post_response.status_code = 302
+        mock_post_response.headers = {"Location": "/mdk/"}
+        mock_post_response.cookies = {"FogisMobilDomarKlient.ASPXAUTH": "test_auth_cookie"}
 
         # Create mock cookies
         mock_cookies = {

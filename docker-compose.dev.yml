@@ -22,11 +22,20 @@ services:
       - FLASK_DEBUG=1
       - TZ=Europe/Stockholm
     healthcheck:
-      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/health | grep -q 200 || exit 1"]
+      # Use a verbose health check for development to help diagnose issues
+      # Use 0.0.0.0 instead of 127.0.0.1 to ensure it works in all network configurations
+      test: [
+        "CMD-SHELL",
+        "curl -v http://0.0.0.0:8080/ > /tmp/health_check.log 2>&1 && \
+         echo 'Health check response:' && \
+         cat /tmp/health_check.log && \
+         curl -s -o /dev/null -w '%{http_code}' http://0.0.0.0:8080/ | grep -q 200 || \
+         (echo 'Health check failed:' && cat /tmp/health_check.log && exit 1)"
+      ]
       interval: 15s
       timeout: 10s
       retries: 10
-      start_period: 60s
+      start_period: 30s
     init: true
     restart: unless-stopped
     command: ["python", "fogis_api_gateway.py"]

@@ -1,19 +1,90 @@
-# fogis_api_client
-### A Python client for interacting with the FOGIS API (Svensk Fotboll).
+# FOGIS API Client
 
-#### Features
-* Authentication with FOGIS API using either credentials or cookies.
-* Lazy login - automatically authenticates when needed.
-* Cookie-based authentication for improved security.
-* Fetching match lists, team players, officials, and events.
-* Reporting match events and results.
-* Error handling and logging.
----
-#### Installation
+[![PyPI version](https://badge.fury.io/py/fogis-api-client-timmyBird.svg)](https://badge.fury.io/py/fogis-api-client-timmyBird)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A Python client for interacting with the FOGIS API (Svenska Fotbollförbundet).
+
+## Features
+
+* **Authentication Options**: Login with credentials or session cookies
+* **Lazy Authentication**: Automatically authenticates when needed
+* **Match Management**: Fetch match lists, details, and results
+* **Event Reporting**: Report goals, cards, substitutions, and other match events
+* **Team Information**: Access team players, officials, and match assignments
+* **Type Safety**: Comprehensive type annotations for better IDE support
+* **Error Handling**: Detailed error messages and exception handling
+* **Logging**: Built-in logging for debugging and monitoring
+* **Docker Support**: Easy deployment and development with Docker
+
+## Installation
+
+### Using pip
+
 ```bash
 pip install fogis-api-client-timmyBird
 ```
----
+
+### From Source
+
+```bash
+git clone https://github.com/timmybird/fogis_api_client_python.git
+cd fogis_api_client_python
+pip install -e .
+```
+
+### Using Docker
+
+```bash
+# Pull the Docker image
+docker pull timmybird/fogis_api_client_python:latest
+
+# Run a script using the Docker image
+docker run --rm -v $(pwd):/app \
+  -e FOGIS_USERNAME="your_username" \
+  -e FOGIS_PASSWORD="your_password" \
+  timmybird/fogis_api_client_python:latest \
+  python /app/your_script.py
+```
+
+See the [Docker Usage](docs/getting_started.md#docker-usage) section in the documentation for more details.
+
+## Quick Start
+
+```python
+from fogis_api_client import FogisApiClient, FogisLoginError, FogisAPIRequestError, configure_logging
+
+# Configure logging with enhanced options
+configure_logging(level="INFO")
+
+# Initialize with credentials
+client = FogisApiClient(username="your_username", password="your_password")
+
+# Fetch matches (lazy login happens automatically)
+try:
+    matches = client.fetch_matches_list_json()
+    print(f"Found {len(matches)} matches")
+
+    # Display the next 3 matches
+    for match in matches[:3]:
+        print(f"{match['datum']} {match['tid']}: {match['hemmalag']} vs {match['bortalag']} at {match['arena']}")
+
+except FogisLoginError as e:
+    print(f"Authentication error: {e}")
+except FogisAPIRequestError as e:
+    print(f"API request error: {e}")
+```
+
+## Documentation
+
+Comprehensive documentation is available in the [docs](docs/) directory:
+
+* [Getting Started Guide](docs/getting_started.md)
+* [API Reference](docs/api_reference.md)
+* [User Guides](docs/user_guides/)
+* [Architecture Overview](docs/architecture.md)
+* [Troubleshooting](docs/troubleshooting.md)
+
 #### Usage
 
 ```python
@@ -205,6 +276,21 @@ Contributions are welcome! Please follow these steps:
 6. Push to the branch: `git push origin feature/your-feature-name`
 7. Create a pull request
 
+##### Pre-Commit Hooks
+
+We use pre-commit hooks to ensure code quality. To set up pre-commit hooks:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+The hooks will automatically run before each commit, checking for:
+- Code formatting (Black, isort)
+- Linting issues (flake8)
+- Type checking (mypy)
+- Unit test failures
+
 ##### Pre-Merge Check
 
 Before merging any changes, always run the pre-merge check script to ensure all tests pass:
@@ -218,14 +304,47 @@ This script:
 - Builds and tests the Docker image (if Docker is available)
 - Ensures your changes won't break existing functionality
 
----
-#### Error Handling
+## Troubleshooting
+
+If you encounter issues while using the FOGIS API Client, check the [Troubleshooting Guide](docs/troubleshooting.md) for solutions to common problems.
+
+### Common Issues
+
+1. **Authentication Failures**
+   - Check your credentials
+   - Verify your account is active
+   - Ensure you have the necessary permissions
+
+2. **API Request Errors**
+   - Check your network connection
+   - Verify the FOGIS API is accessible
+   - Ensure your request parameters are valid
+
+3. **Data Errors**
+   - Verify that the requested resource exists
+   - Check for API changes
+   - Ensure your data is properly formatted
+
+4. **Match Reporting Issues**
+   - Ensure all required fields are included
+   - Verify that the match is in a reportable state
+   - Check that player and team IDs are correct
+
+5. **Performance Issues**
+   - Implement caching for frequently accessed data
+   - Use more specific queries to reduce data size
+   - Process large data sets in chunks
+
+## Error Handling
+
 The package includes custom exceptions for common API errors:
 
-`FogisLoginError`: Raised when login fails.
+- **FogisLoginError**: Raised when login fails due to invalid credentials, missing credentials, or session expiration.
 
-`FogisAPIRequestError`: Raised for general API request errors.
+- **FogisAPIRequestError**: Raised for general API request errors such as network issues, server errors, or invalid parameters.
 
----
-#### License
+- **FogisDataError**: Raised when there's an issue with the data from FOGIS, such as invalid response format, missing fields, or parsing errors.
+
+## License
+
 MIT License

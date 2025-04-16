@@ -47,8 +47,7 @@ class MatchListFilter:
         return self
 
     def saved_datum(self, saved_datum: str) -> "MatchListFilter":
-        """Sets the saved date for filter (likely not server-side, but included for completeness)."""
-
+        """Sets the saved date for filter (included for completeness)."""
         self._sparad_datum = saved_datum
         return self
 
@@ -137,7 +136,7 @@ class MatchListFilter:
 
         return payload_filter
 
-    def filter_matches(self, matches: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def filter_matches(self, matches: List[Any]) -> List[Any]:
         """Applies the configured client-side filters to the list of matches."""
         filtered_matches = list(matches)  # Create a copy to avoid modifying original list
 
