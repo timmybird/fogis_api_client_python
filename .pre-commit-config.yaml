@@ -45,3 +45,10 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+
+    -   id: dependency-check
+        name: dependency-check
+        entry: python -c "import sys; import marshmallow; sys.exit(0 if int(marshmallow.__version__.split('.')[0]) >= 3 and int(marshmallow.__version__.split('.')[1]) >= 26 else 1)"
+        language: system
+        pass_filenames: false
+        always_run: true
