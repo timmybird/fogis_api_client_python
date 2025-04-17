@@ -92,9 +92,7 @@ class FogisApiClient:
         cookies (Optional[CookieDict]): Session cookies for authentication
     """
 
-    BASE_URL: str = (
-        "https://fogis.svenskfotboll.se/mdk"  # Define base URL as a class constant
-    )
+    BASE_URL: str = "https://fogis.svenskfotboll.se/mdk"  # Define base URL as a class constant
     logger: logging.Logger = logging.getLogger("fogis_api_client.api")
 
     def __init__(
@@ -227,9 +225,7 @@ class FogisApiClient:
             eventvalidation = soup.find("input", {"name": "__EVENTVALIDATION"})
 
             if not form and not (viewstate and eventvalidation):
-                error_msg = (
-                    "Login failed: Could not find login form or required form elements"
-                )
+                error_msg = "Login failed: Could not find login form or required form elements"
                 self.logger.error(error_msg)
                 raise FogisLoginError(error_msg)
 
@@ -270,10 +266,7 @@ class FogisApiClient:
             )
 
             # Handle the redirect manually for better control
-            if (
-                response.status_code == 302
-                and "FogisMobilDomarKlient.ASPXAUTH" in response.cookies
-            ):
+            if response.status_code == 302 and "FogisMobilDomarKlient.ASPXAUTH" in response.cookies:
                 redirect_url = response.headers["Location"]
 
                 # Fix the redirect URL - the issue is here
@@ -310,9 +303,7 @@ class FogisApiClient:
             self.logger.error(error_msg)
             raise FogisAPIRequestError(error_msg)
 
-    def fetch_matches_list_json(
-        self, filter: Optional[Dict[str, Any]] = None
-    ) -> List[MatchDict]:
+    def fetch_matches_list_json(self, filter: Optional[Dict[str, Any]] = None) -> List[MatchDict]:
         """
         Fetches the list of matches for the logged-in referee.
 
@@ -423,9 +414,7 @@ class FogisApiClient:
             self.logger.error(error_msg)
             raise FogisDataError(error_msg)
 
-    def fetch_match_players_json(
-        self, match_id: Union[str, int]
-    ) -> Dict[str, List[PlayerDict]]:
+    def fetch_match_players_json(self, match_id: Union[str, int]) -> Dict[str, List[PlayerDict]]:
         """
         Fetches player information for a specific match.
 
@@ -495,9 +484,7 @@ class FogisApiClient:
             ...     print("No referee assigned yet")
             Main referee: John Doe
         """
-        url = (
-            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatchfunktionarerLista"
-        )
+        url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatchfunktionarerLista"
         match_id_int = int(match_id) if isinstance(match_id, (str, int)) else match_id
         payload = {"matchid": match_id_int}
 
@@ -756,9 +743,7 @@ class FogisApiClient:
             ...     print(f"Multiple results found: {len(result)}")
             Score: 2-1
         """
-        result_url = (
-            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatchresultatlista"
-        )
+        result_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatchresultatlista"
         match_id_int = int(match_id) if isinstance(match_id, (str, int)) else match_id
         payload = {"matchid": match_id_int}
 
@@ -838,9 +823,7 @@ class FogisApiClient:
                 elif isinstance(value, int):
                     result_data_copy[field] = value
 
-        result_url = (
-            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchresultatLista"
-        )
+        result_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchresultatLista"
         response_data = self._api_request(result_url, result_data_copy)
 
         if isinstance(response_data, dict):
@@ -911,9 +894,7 @@ class FogisApiClient:
             self.logger.error(f"Error deleting event with ID {event_id}: {e}")
             return False
 
-    def report_team_official_action(
-        self, action_data: OfficialActionDict
-    ) -> Dict[str, Any]:
+    def report_team_official_action(self, action_data: OfficialActionDict) -> Dict[str, Any]:
         """
         Reports team official disciplinary action to the FOGIS API.
 
@@ -971,9 +952,7 @@ class FogisApiClient:
                 elif isinstance(value, int):
                     action_data_copy[key] = value
 
-        action_url = (
-            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchlagledare"
-        )
+        action_url = f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchlagledare"
         response_data = self._api_request(action_url, action_data_copy)
 
         if isinstance(response_data, dict):
@@ -1019,9 +998,7 @@ class FogisApiClient:
 
         if isinstance(response_data, dict):
             if response_data.get("success", False):
-                self.logger.info(
-                    f"Successfully cleared all events for match ID {match_id}"
-                )
+                self.logger.info(f"Successfully cleared all events for match ID {match_id}")
             else:
                 self.logger.warning(f"Failed to clear events for match ID {match_id}")
             return cast(Dict[str, bool], response_data)
@@ -1159,13 +1136,9 @@ class FogisApiClient:
 
         if isinstance(response_data, dict):
             if response_data.get("success", False):
-                self.logger.info(
-                    f"Successfully marked match ID {match_id} reporting as finished"
-                )
+                self.logger.info(f"Successfully marked match ID {match_id} reporting as finished")
             else:
-                self.logger.warning(
-                    f"Failed to mark match ID {match_id} reporting as finished"
-                )
+                self.logger.warning(f"Failed to mark match ID {match_id} reporting as finished")
             return cast(Dict[str, bool], response_data)
         else:
             error_msg = (
@@ -1267,14 +1240,10 @@ class FogisApiClient:
                         return response_json["d"]
                 else:
                     # If 'd' is already a dict/list, return it directly
-                    self.logger.debug(
-                        "Response 'd' value is already parsed, returning directly"
-                    )
+                    self.logger.debug("Response 'd' value is already parsed, returning directly")
                     return response_json["d"]
             else:
-                self.logger.debug(
-                    "Response does not contain 'd' key, returning full response"
-                )
+                self.logger.debug("Response does not contain 'd' key, returning full response")
                 return response_json
 
         except requests.exceptions.RequestException as e:

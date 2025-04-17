@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4] - 2025-04-18
+
+### Fixed
+- Fixed parameter names in team endpoints (`fetch_team_players_json` and `fetch_team_officials_json`)
+  - Changed parameter name from `lagid` to `matchlagid` to match the FOGIS API requirements
+  - Updated documentation to clarify the use of match-specific team IDs
+
 ## [0.2.3] - 2025-04-17
 
 ### Fixed
