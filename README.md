@@ -331,6 +331,20 @@ You can also run the hooks manually on all files:
 pre-commit run --all-files
 ```
 
+##### Verifying Docker Builds Locally
+
+Before pushing changes that might affect Docker builds, you can verify them locally:
+
+```bash
+# Run the Docker verification hook
+pre-commit run docker-verify --hook-stage manual
+
+# Or run the script directly
+./scripts/verify_docker_build.sh
+```
+
+This will build all Docker images locally and ensure they work correctly, preventing CI/CD pipeline failures.
+
 ##### Pre-Merge Check
 
 Before merging any changes, always run the pre-merge check script to ensure all tests pass:

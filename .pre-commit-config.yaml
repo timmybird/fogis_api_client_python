@@ -48,7 +48,15 @@ repos:
 
     -   id: dependency-check
         name: dependency-check
-        entry: python -c "import sys; import marshmallow; sys.exit(0 if int(marshmallow.__version__.split('.')[0]) >= 3 and int(marshmallow.__version__.split('.')[1]) >= 26 else 1)"
+        entry: python scripts/check_dependencies.py
         language: system
         pass_filenames: false
         always_run: true
+
+    -   id: docker-verify
+        name: docker-verify
+        entry: scripts/verify_docker_build.sh
+        language: system
+        pass_filenames: false
+        # Only run this on demand with --hook-stage manual
+        stages: [manual]
