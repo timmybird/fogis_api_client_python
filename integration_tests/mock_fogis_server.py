@@ -313,6 +313,106 @@ class MockFogisServer:
             # Return the response
             return jsonify({"d": json.dumps(officials_data)})
 
+        # Match details endpoint
+        @self.app.route(
+            "/mdk/MatchWebMetoder.aspx/GetMatchInformation", methods=["POST"]
+        )
+        def fetch_match_details():
+            auth_result = self._check_auth()
+            if auth_result is not True:
+                return auth_result
+
+            # Get match ID from request
+            data = request.json or {}
+            match_id = data.get("matchid")
+
+            # Generate match data using the factory
+            match_data = MockDataFactory.generate_match_details(match_id)
+
+            # Return the response
+            return jsonify({"d": json.dumps(match_data)})
+
+        # Match players endpoint
+        @self.app.route(
+            "/mdk/MatchWebMetoder.aspx/GetMatchdeltagareLista", methods=["POST"]
+        )
+        def fetch_match_players():
+            auth_result = self._check_auth()
+            if auth_result is not True:
+                return auth_result
+
+            # Get match ID from request
+            data = request.json or {}
+            match_id = data.get("matchid")
+
+            # Generate match players data using the factory
+            players_data = MockDataFactory.generate_match_players(match_id)
+
+            # Return the response
+            return jsonify({"d": json.dumps(players_data)})
+
+        # Match officials endpoint
+        @self.app.route(
+            "/mdk/MatchWebMetoder.aspx/GetMatchlagledare", methods=["POST"]
+        )
+        def fetch_match_officials():
+            auth_result = self._check_auth()
+            if auth_result is not True:
+                return auth_result
+
+            # Get match ID from request
+            data = request.json or {}
+            match_id = data.get("matchid")
+
+            # Generate match officials data using the factory
+            officials_data = MockDataFactory.generate_match_officials(match_id)
+
+            # Return the response
+            return jsonify({"d": json.dumps(officials_data)})
+
+        # Match events endpoint
+        @self.app.route(
+            "/mdk/MatchWebMetoder.aspx/GetMatchhandelser", methods=["POST"]
+        )
+        def fetch_match_events():
+            auth_result = self._check_auth()
+            if auth_result is not True:
+                return auth_result
+
+            # Get match ID from request
+            data = request.json or {}
+            match_id = data.get("matchid")
+
+            # Generate match events data using the factory
+            events_data = MockDataFactory.generate_match_events(match_id)
+
+            # Return the response
+            return jsonify({"d": json.dumps(events_data)})
+
+        # Clear match events endpoint
+        @self.app.route(
+            "/mdk/MatchWebMetoder.aspx/RensaMatchhandelser", methods=["POST"]
+        )
+        def clear_match_events():
+            auth_result = self._check_auth()
+            if auth_result is not True:
+                return auth_result
+
+            # Return success response
+            return jsonify({"d": json.dumps({"success": True})})
+
+        # Mark reporting finished endpoint
+        @self.app.route(
+            "/mdk/MatchWebMetoder.aspx/AvslutaRapportering", methods=["POST"]
+        )
+        def mark_reporting_finished():
+            auth_result = self._check_auth()
+            if auth_result is not True:
+                return auth_result
+
+            # Return success response
+            return jsonify({"d": json.dumps({"success": True})})
+
         # Main dashboard route after login
         @self.app.route("/mdk/", methods=["GET"])
         def dashboard():
