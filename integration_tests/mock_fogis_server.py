@@ -315,7 +315,7 @@ class MockFogisServer:
 
         # Match details endpoint
         @self.app.route(
-            "/mdk/MatchWebMetoder.aspx/GetMatchInformation", methods=["POST"]
+            "/mdk/MatchWebMetoder.aspx/GetMatch", methods=["POST"]
         )
         def fetch_match_details_endpoint():
             auth_result = self._check_auth()
@@ -353,7 +353,7 @@ class MockFogisServer:
 
         # Match officials endpoint
         @self.app.route(
-            "/mdk/MatchWebMetoder.aspx/GetMatchlagledare", methods=["POST"]
+            "/mdk/MatchWebMetoder.aspx/GetMatchfunktionarerLista", methods=["POST"]
         )
         def fetch_match_officials_endpoint():
             auth_result = self._check_auth()
@@ -372,7 +372,7 @@ class MockFogisServer:
 
         # Match events endpoint
         @self.app.route(
-            "/mdk/MatchWebMetoder.aspx/GetMatchhandelser", methods=["POST"]
+            "/mdk/MatchWebMetoder.aspx/GetMatchhandelselista", methods=["POST"]
         )
         def fetch_match_events_endpoint():
             auth_result = self._check_auth()
@@ -410,7 +410,7 @@ class MockFogisServer:
 
         # Clear match events endpoint
         @self.app.route(
-            "/mdk/MatchWebMetoder.aspx/RensaMatchhandelser", methods=["POST"]
+            "/mdk/MatchWebMetoder.aspx/ClearMatchEvents", methods=["POST"]
         )
         def clear_match_events_endpoint():
             auth_result = self._check_auth()
@@ -434,7 +434,7 @@ class MockFogisServer:
 
         # Mark reporting finished endpoint
         @self.app.route(
-            "/mdk/MatchWebMetoder.aspx/AvslutaRapportering", methods=["POST"]
+            "/mdk/MatchWebMetoder.aspx/SparaMatchGodkannDomarrapport", methods=["POST"]
         )
         def mark_reporting_finished_endpoint():
             auth_result = self._check_auth()
