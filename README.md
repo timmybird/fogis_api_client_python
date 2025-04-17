@@ -276,20 +276,60 @@ Contributions are welcome! Please follow these steps:
 6. Push to the branch: `git push origin feature/your-feature-name`
 7. Create a pull request
 
-##### Pre-Commit Hooks
+#### Development Setup
 
-We use pre-commit hooks to ensure code quality. To set up pre-commit hooks:
+We provide setup scripts to make it easy to set up your development environment, including pre-commit hooks.
 
+##### Using the Setup Script
+
+On macOS/Linux:
 ```bash
-pip install pre-commit
-pre-commit install
+./scripts/setup_dev_env.sh
 ```
 
-The hooks will automatically run before each commit, checking for:
+On Windows (PowerShell):
+```powershell
+.\scripts\setup_dev_env.ps1
+```
+
+This script will:
+1. Create a virtual environment (if it doesn't exist)
+2. Install the package in development mode with all dev dependencies
+3. Install pre-commit and set up the hooks
+
+##### Manual Setup
+
+If you prefer to set up manually:
+
+1. Create and activate a virtual environment:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
+
+2. Install the package in development mode:
+   ```bash
+   pip install -e ".[dev]"
+   ```
+
+3. Install pre-commit hooks:
+   ```bash
+   pip install pre-commit
+   pre-commit install
+   ```
+
+##### Pre-Commit Hooks
+
+We use pre-commit hooks to ensure code quality. The hooks will automatically run before each commit, checking for:
 - Code formatting (Black, isort)
 - Linting issues (flake8)
 - Type checking (mypy)
 - Unit test failures
+
+You can also run the hooks manually on all files:
+```bash
+pre-commit run --all-files
+```
 
 ##### Pre-Merge Check
 
