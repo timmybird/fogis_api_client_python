@@ -45,3 +45,18 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+
+    -   id: dependency-check
+        name: dependency-check
+        entry: python scripts/check_dependencies.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
+    -   id: docker-verify
+        name: docker-verify
+        entry: scripts/verify_docker_build.sh
+        language: system
+        pass_filenames: false
+        # Only run this on demand with --hook-stage manual
+        stages: [manual]

@@ -25,7 +25,7 @@ setuptools.setup(
         "flask",
         "apispec>=6.0.0",
         "flask-swagger-ui",
-        "marshmallow",
+        "marshmallow>=3.26.0",
         "psutil",
     ],
     extras_require={
