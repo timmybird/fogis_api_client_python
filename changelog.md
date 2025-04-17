@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.3] - 2025-04-17
+
+### Fixed
+- Fixed PyPI publishing workflow to use the correct API token format
+
 ## [0.2.2] - 2025-04-16
 
 ### Fixed
