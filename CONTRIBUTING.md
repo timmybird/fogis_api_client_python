@@ -442,7 +442,19 @@ If you are an AI assistant reading this:
    - When in doubt, ask for clarification rather than making assumptions
    - Consider creating templates for common tasks to ensure consistency
 
-8. **Remind Users of the Process**:
+8. **Maintaining Documentation and Scripts**:
+   - Keep documentation and scripts up to date with code changes
+   - When adding new features, update relevant documentation
+   - When changing workflows, update related scripts
+   - When fixing bugs, update troubleshooting guides if applicable
+   - Pay special attention to onboarding materials (README, QUICKSTART.md, etc.)
+   - Test setup scripts on a clean environment periodically
+   - Update version numbers and dependencies in documentation
+   - Review documentation for accuracy during the PR review process
+   - Consider documentation and scripts as part of the codebase, not an afterthought
+   - When switching between computers, use it as an opportunity to verify onboarding docs
+
+9. **Remind Users of the Process**:
    - If a user asks you to push directly to main, remind them of the GitFlow process
    - Suggest creating a proper branch and PR instead
    - Reference this document when explaining the process
