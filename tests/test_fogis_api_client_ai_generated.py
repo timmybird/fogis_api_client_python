@@ -189,6 +189,12 @@ class TestFogisApiClient(unittest.TestCase):
         self.assertEqual(result["spelare"][0]["id"], "1")
         self.assertEqual(result["spelare"][1]["id"], "2")
 
+        # Verify the API call used the correct parameter name (matchlagid)
+        mock_api_request.assert_called_once_with(
+            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatchdeltagareListaForMatchlag",
+            {"matchlagid": 123},
+        )
+
     @patch("fogis_api_client.fogis_api_client.FogisApiClient._api_request")
     def test_fetch_team_officials_json_failure(self, mock_api_request):
         """Test fetch_team_officials_json failure."""
@@ -198,6 +204,40 @@ class TestFogisApiClient(unittest.TestCase):
         # Call the method and expect an exception
         with self.assertRaises(FogisAPIRequestError):
             self.api_client.fetch_team_officials_json(team_id=123)
+
+        # Verify the API call attempted to use the correct parameter name (matchlagid)
+        mock_api_request.assert_called_once_with(
+            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatchlagledareListaForMatchlag",
+            {"matchlagid": 123},
+        )
+
+    @patch("fogis_api_client.fogis_api_client.FogisApiClient._api_request")
+    def test_fetch_team_officials_json_success(self, mock_api_request):
+        """Test successful fetch_team_officials_json."""
+        # Mock the _api_request method to return a valid response
+        mock_api_request.return_value = [
+            {"personid": 1, "fornamn": "John", "efternamn": "Doe", "roll": "Tränare"},
+            {
+                "personid": 2,
+                "fornamn": "Jane",
+                "efternamn": "Smith",
+                "roll": "Assisterande tränare",
+            },
+        ]
+
+        # Call the method
+        result = self.api_client.fetch_team_officials_json(team_id=123)
+
+        # Verify the result
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0]["personid"], 1)
+        self.assertEqual(result[0]["roll"], "Tränare")
+
+        # Verify the API call used the correct parameter name (matchlagid)
+        mock_api_request.assert_called_once_with(
+            f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/GetMatchlagledareListaForMatchlag",
+            {"matchlagid": 123},
+        )
 
     @patch("fogis_api_client.fogis_api_client.FogisApiClient._api_request")
     def test_report_match_event_success(self, mock_api_request):

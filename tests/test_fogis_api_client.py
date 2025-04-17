@@ -447,7 +447,7 @@ class TestFogisApiClient(unittest.TestCase):
         # Call report_team_official_action
         action_data = {
             "matchid": "12345",
-            "lagid": "67890",
+            "lagid": "67890",  # Note: This parameter name is still 'lagid' in this method
             "personid": "54321",
             "matchlagledaretypid": "2",  # Example: Yellow card
             "minut": 65,
@@ -462,6 +462,7 @@ class TestFogisApiClient(unittest.TestCase):
             f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchlagledare",
             {
                 "matchid": 12345,  # Should be converted to int
+                # Note: This parameter name is still 'lagid' in this method
                 "lagid": 67890,  # Should be converted to int
                 "personid": 54321,  # Should be converted to int
                 "matchlagledaretypid": 2,  # Should be converted to int
@@ -478,7 +479,7 @@ class TestFogisApiClient(unittest.TestCase):
         # Call report_team_official_action and expect an exception
         action_data = {
             "matchid": "12345",
-            "lagid": "67890",
+            "lagid": "67890",  # Note: This parameter name is still 'lagid' in this method
             "personid": "54321",
             "matchlagledaretypid": "2",
         }
@@ -493,6 +494,7 @@ class TestFogisApiClient(unittest.TestCase):
             f"{FogisApiClient.BASE_URL}/MatchWebMetoder.aspx/SparaMatchlagledare",
             {
                 "matchid": 12345,  # Should be converted to int
+                # Note: This parameter name is still 'lagid' in this method
                 "lagid": 67890,  # Should be converted to int
                 "personid": 54321,  # Should be converted to int
                 "matchlagledaretypid": 2,  # Should be converted to int
