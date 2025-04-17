@@ -279,7 +279,7 @@ class MockFogisServer:
         @self.app.route(
             "/mdk/MatchWebMetoder.aspx/GetMatchdeltagareListaForMatchlag", methods=["POST"]
         )
-        def fetch_team_players():
+        def fetch_team_players_endpoint():
             auth_result = self._check_auth()
             if auth_result is not True:
                 return auth_result
@@ -298,7 +298,7 @@ class MockFogisServer:
         @self.app.route(
             "/mdk/MatchWebMetoder.aspx/GetMatchlagledareListaForMatchlag", methods=["POST"]
         )
-        def fetch_team_officials():
+        def fetch_team_officials_endpoint():
             auth_result = self._check_auth()
             if auth_result is not True:
                 return auth_result
@@ -317,7 +317,7 @@ class MockFogisServer:
         @self.app.route(
             "/mdk/MatchWebMetoder.aspx/GetMatchInformation", methods=["POST"]
         )
-        def fetch_match_details():
+        def fetch_match_details_endpoint():
             auth_result = self._check_auth()
             if auth_result is not True:
                 return auth_result
@@ -336,7 +336,7 @@ class MockFogisServer:
         @self.app.route(
             "/mdk/MatchWebMetoder.aspx/GetMatchdeltagareLista", methods=["POST"]
         )
-        def fetch_match_players():
+        def fetch_match_players_endpoint():
             auth_result = self._check_auth()
             if auth_result is not True:
                 return auth_result
@@ -355,7 +355,7 @@ class MockFogisServer:
         @self.app.route(
             "/mdk/MatchWebMetoder.aspx/GetMatchlagledare", methods=["POST"]
         )
-        def fetch_match_officials():
+        def fetch_match_officials_endpoint():
             auth_result = self._check_auth()
             if auth_result is not True:
                 return auth_result
@@ -374,7 +374,7 @@ class MockFogisServer:
         @self.app.route(
             "/mdk/MatchWebMetoder.aspx/GetMatchhandelser", methods=["POST"]
         )
-        def fetch_match_events():
+        def fetch_match_events_endpoint():
             auth_result = self._check_auth()
             if auth_result is not True:
                 return auth_result
@@ -389,11 +389,42 @@ class MockFogisServer:
             # Return the response
             return jsonify({"d": json.dumps(events_data)})
 
+        # Match result endpoint
+        @self.app.route(
+            "/mdk/MatchWebMetoder.aspx/GetMatchresultat", methods=["POST"]
+        )
+        def fetch_match_result_endpoint():
+            auth_result = self._check_auth()
+            if auth_result is not True:
+                return auth_result
+
+            # Get match ID from request
+            data = request.json or {}
+            match_id = data.get("matchid")
+
+            # Generate match result data using the factory
+            result_data = MockDataFactory.generate_match_result(match_id)
+
+            # Return the response
+            return jsonify({"d": json.dumps(result_data)})
+
         # Clear match events endpoint
         @self.app.route(
             "/mdk/MatchWebMetoder.aspx/RensaMatchhandelser", methods=["POST"]
         )
-        def clear_match_events():
+        def clear_match_events_endpoint():
+            auth_result = self._check_auth()
+            if auth_result is not True:
+                return auth_result
+
+            # Return success response
+            return jsonify({"d": json.dumps({"success": True})})
+
+        # Report match event endpoint
+        @self.app.route(
+            "/mdk/MatchWebMetoder.aspx/SparaMatchhandelse", methods=["POST"]
+        )
+        def report_match_event_endpoint():
             auth_result = self._check_auth()
             if auth_result is not True:
                 return auth_result
@@ -405,7 +436,7 @@ class MockFogisServer:
         @self.app.route(
             "/mdk/MatchWebMetoder.aspx/AvslutaRapportering", methods=["POST"]
         )
-        def mark_reporting_finished():
+        def mark_reporting_finished_endpoint():
             auth_result = self._check_auth()
             if auth_result is not True:
                 return auth_result
