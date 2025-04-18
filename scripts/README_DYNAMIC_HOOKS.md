@@ -103,6 +103,24 @@ When making changes to the generator:
 3. Test both interactive and non-interactive modes
 4. Ensure backward compatibility with existing configurations
 
+### Modifying Pre-commit Configuration
+
+When modifying the `.pre-commit-config.yaml` file or adding new hooks:
+
+1. Use `git commit --no-verify` when committing changes to the pre-commit configuration itself
+2. This bypasses the pre-commit hooks, which is necessary when adding new hooks that aren't installed yet
+3. After committing, run `pre-commit install` to install the new hooks
+4. Future commits can then be made normally without `--no-verify`
+
+```bash
+# Example workflow when modifying pre-commit configuration
+git add .pre-commit-config.yaml
+git commit -m "Add new pre-commit hooks" --no-verify
+pre-commit install  # Install the new hooks
+```
+
+> **Note:** Using `--no-verify` should be limited to cases where you're modifying the pre-commit infrastructure itself. For normal development, always let the hooks run to ensure code quality.
+
 ## Future Development
 
 This tool is being battle-tested within this project before potentially being extracted as a standalone package. See issue #107 for more details.
