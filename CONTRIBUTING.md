@@ -442,7 +442,13 @@ If you are an AI assistant reading this:
    - When in doubt, ask for clarification rather than making assumptions
    - Consider creating templates for common tasks to ensure consistency
 
-8. **Remind Users of the Process**:
+8. **Include Reminders in Issues and PRs**:
+   - All issues and pull requests should include a reminder about following these guidelines
+   - Issue templates and PR templates have checkboxes to confirm reading this document
+   - When creating issues or PRs manually, include a link to this document
+   - This ensures consistency across all contributions, regardless of who handles them
+
+9. **Remind Users of the Process**:
    - If a user asks you to push directly to main, remind them of the GitFlow process
    - Suggest creating a proper branch and PR instead
    - Reference this document when explaining the process
