@@ -47,9 +47,26 @@ docker run --rm -v $(pwd):/app \
   python /app/your_script.py
 ```
 
-See the [Docker Usage](docs/getting_started.md#docker-usage) section in the documentation for more details.
+### Development with Docker
+
+For development purposes, you can use the provided development script:
+
+```bash
+# Start the development environment
+./dev.sh
+```
+
+This script will:
+1. Create necessary directories (data, logs, test-results)
+2. Create a default .env.dev file if it doesn't exist
+3. Start the Docker development environment using docker-compose.dev.yml
+4. Show logs from the containers
+
+See the [Docker Usage](docs/getting_started.md#docker-usage) and [Development with Docker](docs/getting_started.md#development-with-docker) sections in the documentation for more details.
 
 ## Quick Start
+
+For new developers, see the [QUICKSTART.md](QUICKSTART.md) guide for step-by-step instructions to get up and running quickly.
 
 ```python
 from fogis_api_client import FogisApiClient, FogisLoginError, FogisAPIRequestError, configure_logging
@@ -344,6 +361,36 @@ pre-commit run docker-verify --hook-stage manual
 ```
 
 This will build all Docker images locally and ensure they work correctly, preventing CI/CD pipeline failures.
+
+##### Running Integration Tests
+
+To run integration tests locally before pushing changes:
+
+```bash
+# Run the integration tests script
+./scripts/run_integration_tests.sh
+```
+
+This script will:
+1. Set up a virtual environment if needed
+2. Install dependencies
+3. Run the integration tests with the mock server
+
+Running integration tests locally helps catch issues before they reach the CI/CD pipeline.
+
+##### Dynamic Pre-commit Hook Generator
+
+This project uses a dynamic pre-commit hook generator powered by Google's Gemini LLM to maintain consistent code quality and documentation standards.
+
+```bash
+# Generate pre-commit hooks interactively
+python3 scripts/dynamic_precommit_generator.py
+
+# Generate pre-commit hooks non-interactively
+python3 scripts/dynamic_precommit_generator.py --non-interactive --install
+```
+
+See [scripts/README_DYNAMIC_HOOKS.md](scripts/README_DYNAMIC_HOOKS.md) for detailed documentation.
 
 ##### Pre-Merge Check
 
