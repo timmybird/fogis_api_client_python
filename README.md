@@ -378,6 +378,20 @@ This script will:
 
 Running integration tests locally helps catch issues before they reach the CI/CD pipeline.
 
+##### Dynamic Pre-commit Hook Generator
+
+This project uses a dynamic pre-commit hook generator powered by Google's Gemini LLM to maintain consistent code quality and documentation standards.
+
+```bash
+# Generate pre-commit hooks interactively
+python3 scripts/dynamic_precommit_generator.py
+
+# Generate pre-commit hooks non-interactively
+python3 scripts/dynamic_precommit_generator.py --non-interactive --install
+```
+
+See [scripts/README_DYNAMIC_HOOKS.md](scripts/README_DYNAMIC_HOOKS.md) for detailed documentation.
+
 ##### Pre-Merge Check
 
 Before merging any changes, always run the pre-merge check script to ensure all tests pass:

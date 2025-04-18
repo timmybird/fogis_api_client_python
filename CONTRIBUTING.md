@@ -459,6 +459,42 @@ If you are an AI assistant reading this:
    - Suggest creating a proper branch and PR instead
    - Reference this document when explaining the process
 
+## Dynamic Pre-commit Hook Generator
+
+This project uses a dynamic pre-commit hook generator powered by Google's Gemini LLM. This tool helps maintain consistent code quality and documentation standards.
+
+### Using the Generator
+
+```bash
+# Generate pre-commit hooks interactively
+python3 scripts/dynamic_precommit_generator.py
+
+# Generate pre-commit hooks non-interactively
+python3 scripts/dynamic_precommit_generator.py --non-interactive
+
+# Generate and install pre-commit hooks
+python3 scripts/dynamic_precommit_generator.py --non-interactive --install
+```
+
+### Documenting Issues
+
+If you encounter issues with the generator:
+
+1. Check the known issues in `scripts/README_DYNAMIC_HOOKS.md`
+2. If it's a new issue, add it to the document
+3. Create a GitHub issue if it requires code changes
+
+### Modifying the Generator
+
+When modifying the generator:
+
+1. Test both interactive and non-interactive modes
+2. Add fallback mechanisms for new features
+3. Update the documentation in `scripts/README_DYNAMIC_HOOKS.md`
+4. Consider the impact on CI/CD pipelines
+
+See issue #107 for plans to extract this as a standalone tool.
+
 ## Getting Help
 
 If you have questions or need help with the contribution process:
