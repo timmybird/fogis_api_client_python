@@ -278,18 +278,30 @@ Contributions are welcome! Please follow these steps:
 
 ##### Pre-Commit Hooks
 
-We use pre-commit hooks to ensure code quality. To set up pre-commit hooks:
+We use pre-commit hooks to ensure code quality. To set up pre-commit hooks, use our setup script:
+
+```bash
+./setup_precommit.sh
+```
+
+This script will install pre-commit, set up the hooks, and verify the installation works correctly.
+
+Alternatively, you can set up manually:
 
 ```bash
 pip install pre-commit
 pre-commit install
+pip install pytest pytest-cov types-requests
 ```
 
 The hooks will automatically run before each commit, checking for:
 - Code formatting (Black, isort)
 - Linting issues (flake8)
 - Type checking (mypy)
-- Unit test failures
+- Tests (using pytest)
+- Documentation freshness
+
+For more details on pre-commit hooks, see [CONTRIBUTING.md](CONTRIBUTING.md#pre-commit-hooks).
 
 ##### Pre-Merge Check
 
