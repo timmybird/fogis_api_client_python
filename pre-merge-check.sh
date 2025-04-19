@@ -14,9 +14,13 @@ fi
 echo "Fetching latest main branch..."
 git fetch origin main
 
-# Run unit tests but don't fail if they don't pass (temporary until tests are fixed)
-echo "Running unit tests..."
-python3 -m unittest discover || echo "Note: Some tests are failing. This is expected until all tests are updated."
+# Run tests but don't fail if they don't pass (temporary until tests are fixed)
+echo "Running tests with pytest..."
+python3 -m pytest tests/ || echo "Note: Some tests are failing. This is expected until all tests are updated."
+
+# Run tests with coverage
+echo "Running tests with coverage..."
+python3 -m pytest tests/ --cov=fogis_api_client --cov-report=term || echo "Note: Coverage report may show issues that need to be addressed."
 
 # Check if Docker is available
 if command -v docker &> /dev/null; then

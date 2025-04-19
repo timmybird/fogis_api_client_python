@@ -202,6 +202,24 @@ Before submitting a pull request, please ensure all tests pass:
 
 We use pre-commit hooks to automate testing and code quality checks. This helps catch issues early and ensures consistent code quality.
 
+#### Quick Setup (Recommended)
+
+Use our setup script to install and configure pre-commit hooks with all necessary dependencies:
+
+```bash
+./setup_precommit.sh
+```
+
+This script will:
+- Install pre-commit and all required dependencies
+- Set up the hooks
+- Verify the installation works correctly
+- Provide troubleshooting guidance
+
+#### Manual Setup
+
+If you prefer to set up manually:
+
 1. Install pre-commit:
    ```bash
    pip install pre-commit
@@ -212,15 +230,55 @@ We use pre-commit hooks to automate testing and code quality checks. This helps 
    pre-commit install
    ```
 
-3. The hooks will now run automatically before each commit
+3. Install additional dependencies required by hooks:
+   ```bash
+   pip install pytest pytest-cov types-requests
+   ```
+
+#### What the Hooks Do
 
 Pre-commit hooks will:
-- Format your code with Black and isort
+- Format your code with Black and isort (line length 127 to match CI/CD)
 - Check for common issues with flake8
   - Note: We ignore whitespace before ':' (E203) for Black compatibility
   - Note: We ignore lazy string interpolation (F541) as it's not a significant gain for this project
 - Verify type hints with mypy
-- Run unit tests to ensure they pass
+- Run pytest to ensure tests pass
+- Check documentation freshness
+
+#### Running Hooks Manually
+
+To run all hooks on all files:
+```bash
+pre-commit run --all-files
+```
+
+To run a specific hook:
+```bash
+pre-commit run black --all-files
+```
+
+#### Troubleshooting Common Issues
+
+1. **Black/isort formatting issues**:
+   - These hooks will automatically fix formatting
+   - After they run, add the changes and commit again
+
+2. **Flake8 linting issues**:
+   - Follow the error messages to fix style issues
+   - Common fixes: remove unused imports, fix line length, add docstrings
+
+3. **Mypy type checking issues**:
+   - Add proper type hints to function parameters and return values
+   - For third-party libraries without type hints, use `# type: ignore` comments
+
+4. **Test failures**:
+   - Run the failing test individually to debug: `pytest tests/test_file.py::test_function -v`
+   - Fix the failing tests before committing
+
+5. **Hook dependencies**:
+   - If you get "command not found" errors, install the missing dependency
+   - Run `./setup_precommit.sh` to install all required dependencies
 
 If any checks fail, the commit will be blocked until you fix the issues.
 

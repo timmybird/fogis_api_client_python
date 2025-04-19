@@ -20,7 +20,7 @@ COPY . .
 
 # Install dependencies
 RUN pip install --no-cache-dir -e .
-RUN pip install --no-cache-dir flask-cors pytest pytest-flask watchdog psutil
+RUN pip install --no-cache-dir flask-cors pytest pytest-flask watchdog psutil pre-commit pytest-cov types-requests
 
 # Add health check for development with verbose output for debugging
 # Use 0.0.0.0 instead of localhost to ensure it works in all network configurations
