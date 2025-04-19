@@ -14,9 +14,15 @@ fi
 echo "Fetching latest main branch..."
 git fetch origin main
 
-# Run unit tests but don't fail if they don't pass (temporary until tests are fixed)
-echo "Running unit tests..."
-python3 -m unittest discover || echo "Note: Some tests are failing. This is expected until all tests are updated."
+# Run tests with unittest (the project's standard test runner)
+echo "Running tests with unittest..."
+python -m unittest discover || echo "Note: Some tests are failing. This is expected until all tests are updated."
+
+# Optionally run tests with pytest if it's installed
+if command -v pytest &> /dev/null; then
+    echo "Running tests with pytest (optional)..."
+    python -m pytest tests/ || echo "Note: Some pytest tests are failing. This is expected as the project uses unittest."
+fi
 
 # Check if Docker is available
 if command -v docker &> /dev/null; then
