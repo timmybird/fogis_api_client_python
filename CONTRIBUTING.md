@@ -243,8 +243,9 @@ Pre-commit hooks will:
   - Note: We ignore whitespace before ':' (E203) for Black compatibility
   - Note: We ignore lazy string interpolation (F541) as it's not a significant gain for this project
 - Verify type hints with mypy
-- Run tests to ensure they pass
-- Check documentation freshness (optional)
+- Run unittest tests to ensure they pass (compatible with the project's test suite)
+- Optionally run pytest tests (disabled by default)
+- Optionally check documentation freshness (disabled by default)
 
 #### Running Hooks Manually
 

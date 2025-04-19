@@ -42,7 +42,11 @@ pre-commit install
 
 # Install additional dependencies required by hooks
 echo "Installing additional dependencies for hooks..."
-pip install types-requests pytest pytest-cov
+pip install types-requests
+
+# Install optional dependencies for advanced hooks
+echo "Installing optional dependencies for advanced hooks..."
+pip install pytest pytest-cov --quiet
 
 # Verify installation by running hooks on all files
 echo "Verifying installation by running hooks on a sample file..."

@@ -298,8 +298,8 @@ The hooks will automatically run before each commit, checking for:
 - Code formatting (Black, isort)
 - Linting issues (flake8)
 - Type checking (mypy)
-- Tests
-- Documentation freshness (optional)
+- Tests (using unittest, compatible with the project's test suite)
+- Optional: pytest tests and documentation freshness checks
 
 For more details on pre-commit hooks, see [CONTRIBUTING.md](CONTRIBUTING.md#pre-commit-hooks).
 

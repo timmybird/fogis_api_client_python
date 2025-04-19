@@ -37,7 +37,18 @@ repos:
         additional_dependencies: [types-requests]
         args: [--ignore-missing-imports]
 
-# Use pytest instead of unittest to match CI/CD
+# Use unittest for compatibility with existing tests
+-   repo: local
+    hooks:
+    -   id: unittest-check
+        name: unittest-check
+        entry: python -m unittest discover tests
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [commit]
+
+# Add pytest as an optional hook for developers who want to use it
 -   repo: local
     hooks:
     -   id: pytest-check
@@ -45,8 +56,8 @@ repos:
         entry: python -m pytest tests/
         language: system
         pass_filenames: false
-        always_run: true
-        stages: [commit]
+        always_run: false  # Make it optional
+        stages: [manual]
 
 # Add coverage reporting (optional, disabled by default to speed up commits)
 -   repo: local
